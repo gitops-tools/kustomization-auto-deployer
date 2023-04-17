@@ -1,0 +1,27 @@
+# permissions for end users to view kustomizationautodeployers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: kustomizationautodeployer-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kustomization-auto-deployer
+    app.kubernetes.io/part-of: kustomization-auto-deployer
+    app.kubernetes.io/managed-by: kustomize
+  name: kustomizationautodeployer-viewer-role
+rules:
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - kustomizationautodeployers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - kustomizationautodeployers/status
+  verbs:
+  - get

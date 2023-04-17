@@ -1,0 +1,12 @@
+apiVersion: flux.gitops.pro/v1alpha1
+kind: KustomizationAutoDeployer
+metadata:
+  labels:
+    app.kubernetes.io/name: kustomizationautodeployer
+    app.kubernetes.io/instance: kustomizationautodeployer-sample
+    app.kubernetes.io/part-of: kustomization-auto-deployer
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kustomization-auto-deployer
+  name: kustomizationautodeployer-sample
+spec:
+  # TODO(user): Add fields here
