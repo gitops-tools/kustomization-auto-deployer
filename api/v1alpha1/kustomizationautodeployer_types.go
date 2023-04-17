@@ -17,25 +17,29 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/fluxcd/pkg/apis/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // KustomizationAutoDeployerSpec defines the desired state of KustomizationAutoDeployer
 type KustomizationAutoDeployerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of KustomizationAutoDeployer. Edit kustomizationautodeployer_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The Kustomization resource to track and wait for new commits to be
+	// available.
+	KustomizationRef meta.LocalObjectReference `json:"kustomizationRef"`
 }
 
 // KustomizationAutoDeployerStatus defines the observed state of KustomizationAutoDeployer
 type KustomizationAutoDeployerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	LatestCommit string `json:"latestCommit"`
+
+	// ObservedGeneration reflects the generation of the most recently observed
+	// KustomizationAutoDeployer.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// Conditions holds the conditions for the KustomizationAutoDeployer.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
