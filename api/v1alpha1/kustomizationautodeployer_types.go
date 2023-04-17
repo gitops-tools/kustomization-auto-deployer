@@ -25,11 +25,29 @@ import (
 type KustomizationAutoDeployerSpec struct {
 	// The Kustomization resource to track and wait for new commits to be
 	// available.
+	//
+	// This will access the GitRepository that is used by the Kustomization.
 	KustomizationRef meta.LocalObjectReference `json:"kustomizationRef"`
+
+	// Interval at which to check the GitRepository for updates.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern="^([0-9]+(\\.[0-9]+)?(ms|s|m|h))+$"
+	// +required
+	Interval metav1.Duration `json:"interval"`
+
+	// CloneDepth limits the number of commits to get from the GitRepository.
+	//
+	// This is an optimisation for fetching commits.
+	//
+	// +kubebuilder:default=20
+	// +kubebuilder:validation:Minimum:=5
+	// +kubebuilder:validation:Maximum:=100
+	CommitLimit int `json:"commitLimit,omitempty"`
 }
 
 // KustomizationAutoDeployerStatus defines the observed state of KustomizationAutoDeployer
 type KustomizationAutoDeployerStatus struct {
+	// LatestCommit is the latest commit processed by the Kustomization.
 	LatestCommit string `json:"latestCommit"`
 
 	// ObservedGeneration reflects the generation of the most recently observed

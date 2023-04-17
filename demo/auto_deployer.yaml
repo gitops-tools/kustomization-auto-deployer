@@ -1,0 +1,36 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: kustomizationautodeployer-repo
+  namespace: default
+spec:
+  interval: 5m
+  url: https://github.com/bigkevmcd/go-demo
+  ref:
+    branch: main
+    commit: "5849dcf6c9c99e82e8d2b8956a8a9ed61806fcaf"
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kustomizationautodeployer
+  namespace: default
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: kustomizationautodeployer-repo
+  path: "./examples/kustomize/environments/dev"
+  prune: true
+  timeout: 1m
+---
+apiVersion: flux.gitops.pro/v1alpha1
+kind: KustomizationAutoDeployer
+metadata:
+  name: kustomizationautodeployer-sample
+  namespace: default 
+spec:
+  interval: 10m
+  kustomizationRef:
+    name: kustomizationautodeployer

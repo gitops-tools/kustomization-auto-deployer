@@ -37,9 +37,21 @@ spec:
             description: KustomizationAutoDeployerSpec defines the desired state of
               KustomizationAutoDeployer
             properties:
+              commitLimit:
+                default: 20
+                description: "CloneDepth limits the number of commits to get from
+                  the GitRepository. \n This is an optimisation for fetching commits."
+                maximum: 100
+                minimum: 5
+                type: integer
+              interval:
+                description: Interval at which to check the GitRepository for updates.
+                pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$
+                type: string
               kustomizationRef:
-                description: The Kustomization resource to track and wait for new
-                  commits to be available.
+                description: "The Kustomization resource to track and wait for new
+                  commits to be available. \n This will access the GitRepository that
+                  is used by the Kustomization."
                 properties:
                   name:
                     description: Name of the referent.
@@ -48,6 +60,7 @@ spec:
                 - name
                 type: object
             required:
+            - interval
             - kustomizationRef
             type: object
           status:
@@ -124,6 +137,7 @@ spec:
                   type: object
                 type: array
               latestCommit:
+                description: LatestCommit is the latest commit processed by the Kustomization.
                 type: string
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
