@@ -1,8 +1,18 @@
 # kustomization-auto-deployer
-// TODO(user): Add simple overview of use/purpose
+Automatically deploy **all** commits to a Flux [`GitRepository`](https://fluxcd.io/flux/components/source/gitrepositories/).
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+This controller provides a CRD that allows a user to configure the automated deployment of every commit made to a git repository using a Flux [`Kustomization`](https://fluxcd.io/flux/components/kustomize/kustomization/).
+
+Normally, the `GitRepository` polls the `HEAD` of the configured repository with the configured `Interval` and then `Kustomization` are notified of the new commit available and update.
+
+The `GitRepository` will send a [notification](https://fluxcd.io/flux/guides/notifications/) indicating that it has been updated to the `HEAD` commit ID.
+
+If there are multiple commits within the timeframe of the `Interval` when the `GitRepository` polls the repository, it will get all the commits.
+
+The `Kustomization` will send a notification indicating that it has (successfully) deployed the `HEAD` commit ID.
+
+The `Kustomization` doesn't deploy the interim commits separately, there's no way to report that these have been deployed, yes, they are included in the `HEAD` but there's no way to notify on the success or failure of a deployment of an intermediary commit because it's not deployed in a way that we can determine whether or not it would be successful.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
