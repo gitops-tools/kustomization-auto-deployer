@@ -25,12 +25,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	fluxv1alpha1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 )
+
+// RevisionLister is a function type that queries revisions from a git URL.
+type RevisionLister func(ctx context.Context, url string, options git.ListOptions) ([]string, error)
 
 // KustomizationAutoDeployerReconciler reconciles a KustomizationAutoDeployer object
 type KustomizationAutoDeployerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	RevisionLister RevisionLister
 }
 
 //+kubebuilder:rbac:groups=flux.gitops.pro,resources=kustomizationautodeployers,verbs=get;list;watch;create;update;patch;delete

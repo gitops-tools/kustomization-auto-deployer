@@ -102,6 +102,12 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
+.PHONY: test-crds
+test-crds:
+	@mkdir -p controllers/testdata/crds
+	@curl https://raw.githubusercontent.com/fluxcd/source-controller/main/config/crd/bases/source.toolkit.fluxcd.io_gitrepositories.yaml > controllers/testdata/crds/gitrepositories.yaml
+	@curl https://raw.githubusercontent.com/fluxcd/kustomize-controller/main/config/crd/bases/kustomize.toolkit.fluxcd.io_kustomizations.yaml > controllers/testdata/crds/kustomizations.yaml
+
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
