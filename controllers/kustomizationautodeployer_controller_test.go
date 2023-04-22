@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	kustomizev1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 )
@@ -80,9 +80,9 @@ func TestReconciliation(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	test.AssertNoError(t, clientgoscheme.AddToScheme(scheme))
+	test.AssertNoError(t, deployerv1.AddToScheme(scheme))
 	test.AssertNoError(t, kustomizev1.AddToScheme(scheme))
 	test.AssertNoError(t, sourcev1.AddToScheme(scheme))
-	test.AssertNoError(t, kustomizev1.AddToScheme(scheme))
 
 	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme})
 	test.AssertNoError(t, err)
@@ -100,7 +100,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling with missing GitRepository", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -111,7 +111,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with missing Kustomization", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -129,7 +129,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with unpopulated GitRepository artifact", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -143,7 +143,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling error listing commits", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker(func(tr *kustomizev1.GitRepositoryTracker) {
+		tracker := makeTestKustomizationAutoDeployer(func(tr *deployerv1.KustomizationAutoDeployer) {
 			tr.Spec.CommitLimit = 40
 		})
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
@@ -170,7 +170,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with non-head commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -192,7 +192,7 @@ func TestReconciliation(t *testing.T) {
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(tracker)})
 		test.AssertNoError(t, err)
 
-		updated := &kustomizev1.GitRepositoryTracker{}
+		updated := &deployerv1.KustomizationAutoDeployer{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(tracker), updated))
 
 		// one closer to HEAD
@@ -210,7 +210,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with head commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -232,7 +232,7 @@ func TestReconciliation(t *testing.T) {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(tracker)})
 		test.AssertNoError(t, err)
 
-		updated := &kustomizev1.GitRepositoryTracker{}
+		updated := &deployerv1.KustomizationAutoDeployer{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(tracker), updated))
 
 		want := ctrl.Result{RequeueAfter: time.Minute * 3}
@@ -256,7 +256,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling with deployed HEAD commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -278,7 +278,7 @@ func TestReconciliation(t *testing.T) {
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(tracker)})
 		test.AssertNoError(t, err)
 
-		updated := &kustomizev1.GitRepositoryTracker{}
+		updated := &deployerv1.KustomizationAutoDeployer{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(tracker), updated))
 		// the latest commit be the HEAD
 		wantCommit := "main/" + testCommitIDs[0]
@@ -296,7 +296,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with desired commit configured", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		tracker := makeTestGitRepositoryTracker()
+		tracker := makeTestKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, tracker))
 		defer cleanupResource(t, k8sClient, tracker)
 
@@ -321,13 +321,12 @@ func TestReconciliation(t *testing.T) {
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(tracker)})
 		test.AssertNoError(t, err)
 
-		updated := &kustomizev1.GitRepositoryTracker{}
-		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(tracker), updated))
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(tracker), tracker))
 
 		// the latest commit be the HEAD
 		wantCommit := "main/" + testCommitIDs[0]
-		if updated.Status.LatestCommit != wantCommit {
-			t.Errorf("failed to update with latest commit, got %q, want %q", updated.Status.LatestCommit, wantCommit)
+		if tracker.Status.LatestCommit != wantCommit {
+			t.Errorf("failed to update with latest commit, got %q, want %q", tracker.Status.LatestCommit, wantCommit)
 		}
 
 		// the latest commit be the HEAD
@@ -347,18 +346,15 @@ func cleanupResource(t *testing.T, cl client.Client, obj client.Object) {
 	}
 }
 
-func makeTestGitRepositoryTracker(opts ...func(*kustomizev1.GitRepositoryTracker)) *kustomizev1.GitRepositoryTracker {
-	gt := &kustomizev1.GitRepositoryTracker{
+func makeTestKustomizationAutoDeployer(opts ...func(*deployerv1.KustomizationAutoDeployer)) *deployerv1.KustomizationAutoDeployer {
+	gt := &deployerv1.KustomizationAutoDeployer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "demo-tracker",
 			Namespace: "default",
 		},
-		Spec: kustomizev1.GitRepositoryTrackerSpec{
+		Spec: deployerv1.KustomizationAutoDeployerSpec{
 			CommitLimit: 10,
 			Interval:    metav1.Duration{Duration: time.Minute * 3},
-			GitRepositoryRef: meta.LocalObjectReference{
-				Name: "test-gitrepository",
-			},
 			KustomizationRef: meta.LocalObjectReference{
 				Name: "test-kustomization",
 			},
