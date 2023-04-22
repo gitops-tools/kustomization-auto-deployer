@@ -18,8 +18,6 @@ package test
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -41,14 +39,10 @@ type TestRepository struct {
 // directory, with an initial commit with a README file.
 func NewRepository(t *testing.T) *TestRepository {
 	t.Helper()
-	base, err := ioutil.TempDir(os.TempDir(), "tracker")
-	AssertNoError(t, err)
-	t.Cleanup(func() {
-		AssertNoError(t, os.RemoveAll(base))
-	})
-
+	base := t.TempDir()
 	dir := filepath.Join(base, "repo")
 	r, err := git.PlainInit(dir, false)
+	AssertNoError(t, err)
 	writeInitialCommit(t, r)
 
 	return &TestRepository{t: t, Dir: dir, Base: base, Repository: r}

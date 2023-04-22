@@ -31,8 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+
 	fluxv1alpha1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers"
+	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -44,6 +48,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(sourcev1.AddToScheme(scheme))
+	utilruntime.Must(kustomizev1.AddToScheme(scheme))
 	utilruntime.Must(fluxv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -90,8 +96,9 @@ func main() {
 	}
 
 	if err = (&controllers.KustomizationAutoDeployerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		RevisionLister: git.ListRevisionsInRepository,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KustomizationAutoDeployer")
 		os.Exit(1)
