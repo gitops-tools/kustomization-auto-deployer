@@ -24,7 +24,6 @@ import (
 	"time"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
-	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr/testr"
 	"github.com/google/go-cmp/cmp"
@@ -100,7 +99,7 @@ func TestReconciliation(t *testing.T) {
 
 	// t.Run("reconciling with missing GitRepository", func(t *testing.T) {
 	// 	ctx := log.IntoContext(context.TODO(), testr.New(t))
-	// 	deployer := makeTestKustomizationAutoDeployer()
+	// 	deployer := test.NewKustomizationAutoDeployer()
 	// 	test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 	// 	defer cleanupResource(t, k8sClient, deployer)
 
@@ -111,7 +110,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with missing Kustomization", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -131,7 +130,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with unpopulated GitRepository artifact", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -149,7 +148,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling error listing commits", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer(func(tr *deployerv1.KustomizationAutoDeployer) {
+		deployer := test.NewKustomizationAutoDeployer(func(tr *deployerv1.KustomizationAutoDeployer) {
 			tr.Spec.CommitLimit = 40
 		})
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
@@ -177,7 +176,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with non-head commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -219,7 +218,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with head commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -267,7 +266,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling with deployed HEAD commit", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -309,7 +308,7 @@ func TestReconciliation(t *testing.T) {
 
 	t.Run("reconciling GitRepository with desired commit configured", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := makeTestKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
@@ -359,28 +358,6 @@ func cleanupResource(t *testing.T, cl client.Client, obj client.Object) {
 	if err := cl.Delete(context.TODO(), obj); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func makeTestKustomizationAutoDeployer(opts ...func(*deployerv1.KustomizationAutoDeployer)) *deployerv1.KustomizationAutoDeployer {
-	gt := &deployerv1.KustomizationAutoDeployer{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "demo-deployer",
-			Namespace: "default",
-		},
-		Spec: deployerv1.KustomizationAutoDeployerSpec{
-			CommitLimit: 10,
-			Interval:    metav1.Duration{Duration: time.Minute * 3},
-			KustomizationRef: meta.LocalObjectReference{
-				Name: "test-kustomization",
-			},
-		},
-	}
-
-	for _, opt := range opts {
-		opt(gt)
-	}
-
-	return gt
 }
 
 func makeTestGitRepository(opts ...func(*sourcev1.GitRepository)) *sourcev1.GitRepository {
