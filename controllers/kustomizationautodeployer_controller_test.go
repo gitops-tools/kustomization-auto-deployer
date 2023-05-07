@@ -40,26 +40,6 @@ import (
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 )
 
-var testCommitIDs = []string{
-	"6f935147b28e38a99a700843e4893a801c3c8148",
-	"6b36589c98beb53b564aa2b838d8d045f0d0794d",
-	"d2fb242401eb5146b5935f2b8483ffe9ffcef3fd",
-	"ece9b0c9300f65546ca8f57d80bcd6378f051e59",
-	"dd587268153ad335545a53f15efee4ecfabcd1c8",
-	"5ed746679fd79a91517ab32b83ed68c4a315040d",
-	"4553f10114fd9c7e82b65d65ffa8e124911b08e6",
-	"e5d6eeed2f5574737ae73a33bfd208a37b50ccd8",
-	"848e164167cc4db24c21fc47a3da190e5bb801c1",
-	"d756705b4a8462d68838add62892904bcaa1a279",
-	"1d27b733842bb5a29a118c950f521e0ef6ee31f8",
-	"9574855e863316ae161c2f9512cc1203d79d59fa",
-	"edd180938ddfd80161f20c22fa58a2b16dfd66f3",
-	"039dc250bc8bd17c1b3bf5abe6bce68e338e966e",
-	"fa079ad89794b3ebf5932f55ced9e0a714841fac",
-	"d7890a3d6b262a48c126a1ebdc0e71239d33cc8c",
-	"6e430dd9f8fb6f1830f6d2d765e13cf9f3ddfe4a",
-}
-
 func TestReconciliation(t *testing.T) {
 	testEnv := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
@@ -92,21 +72,10 @@ func TestReconciliation(t *testing.T) {
 	reconciler := &KustomizationAutoDeployerReconciler{
 		Client:         k8sClient,
 		Scheme:         scheme,
-		RevisionLister: testRevisionLister(testCommitIDs),
+		RevisionLister: testRevisionLister(test.CommitIDs),
 	}
 
 	test.AssertNoError(t, reconciler.SetupWithManager(mgr))
-
-	// t.Run("reconciling with missing GitRepository", func(t *testing.T) {
-	// 	ctx := log.IntoContext(context.TODO(), testr.New(t))
-	// 	deployer := test.NewKustomizationAutoDeployer()
-	// 	test.AssertNoError(t, k8sClient.Create(ctx, deployer))
-	// 	defer cleanupResource(t, k8sClient, deployer)
-
-	// 	_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
-	// 	// TODO: This should be asserting a condition exists!
-	// 	test.AssertErrorMatch(t, "failed to load gitRepositoryRef test-gitrepository", err)
-	// })
 
 	t.Run("reconciling GitRepository with missing Kustomization", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
@@ -118,9 +87,9 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			repo.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[0],
+				Revision: "main@sha1:" + test.CommitIDs[0],
 			}
 		})
 
@@ -154,20 +123,20 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		// both use the same commit IDs testCommitIDs[4]
+		// both use the same commit IDs test.CommitIDs[4]
 		repo := makeTestGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			r.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[4],
+				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
 
 		kustomization := makeTestKustomization()
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
-		kustomization.Status.LastAppliedRevision = "main@sha1:" + testCommitIDs[4]
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[4]
 		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
@@ -180,21 +149,21 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		// both use the same commit IDs testCommitIDs[4]
+		// both use the same commit IDs test.CommitIDs[4]
 		repo := makeTestGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			r.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[4],
+				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
 
 		kustomization := makeTestKustomization()
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
-		kustomization.Status.LastAppliedRevision = "main@sha1:" + testCommitIDs[4]
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[4]
 		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
@@ -204,15 +173,15 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), updated))
 
 		// one closer to HEAD
-		want := "main@sha1:" + testCommitIDs[3]
+		want := "main@sha1:" + test.CommitIDs[3]
 		if updated.Status.LatestCommit != want {
 			t.Errorf("failed to update with latest commit, got %q, want %q", updated.Status.LatestCommit, want)
 		}
 
 		updatedRepo := &sourcev1.GitRepository{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), updatedRepo))
-		if updatedRepo.Spec.Reference.Commit != testCommitIDs[3] {
-			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, testCommitIDs[3])
+		if updatedRepo.Spec.Reference.Commit != test.CommitIDs[3] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, test.CommitIDs[3])
 		}
 	})
 
@@ -222,21 +191,21 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		// both use the same commit IDs testCommitIDs[0]
+		// both use the same commit IDs test.CommitIDs[0]
 		repo := makeTestGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			r.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[0],
+				Revision: "main@sha1:" + test.CommitIDs[0],
 			}
 		})
 
 		kustomization := makeTestKustomization()
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
-		kustomization.Status.LastAppliedRevision = "main@sha1:" + testCommitIDs[0]
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[0]
 		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
 
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
@@ -251,7 +220,7 @@ func TestReconciliation(t *testing.T) {
 		}
 
 		// the latest commit be the HEAD
-		wantCommit := "main@sha1:" + testCommitIDs[0]
+		wantCommit := "main@sha1:" + test.CommitIDs[0]
 		if updated.Status.LatestCommit != wantCommit {
 			t.Errorf("failed to update with latest commit, got %q, want %q", updated.Status.LatestCommit, wantCommit)
 		}
@@ -259,8 +228,8 @@ func TestReconciliation(t *testing.T) {
 		// the latest commit be the HEAD
 		updatedRepo := &sourcev1.GitRepository{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), updatedRepo))
-		if updatedRepo.Spec.Reference.Commit != testCommitIDs[0] {
-			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, testCommitIDs[0])
+		if updatedRepo.Spec.Reference.Commit != test.CommitIDs[0] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, test.CommitIDs[0])
 		}
 	})
 
@@ -270,21 +239,21 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		// both use the same commit IDs testCommitIDs[0]
+		// both use the same commit IDs test.CommitIDs[0]
 		repo := makeTestGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			r.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[0],
+				Revision: "main@sha1:" + test.CommitIDs[0],
 			}
 		})
 
 		kustomization := makeTestKustomization()
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
-		kustomization.Status.LastAppliedRevision = "main@sha1:" + testCommitIDs[0]
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[0]
 		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
@@ -293,7 +262,7 @@ func TestReconciliation(t *testing.T) {
 		updated := &deployerv1.KustomizationAutoDeployer{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), updated))
 		// the latest commit be the HEAD
-		wantCommit := "main@sha1:" + testCommitIDs[0]
+		wantCommit := "main@sha1:" + test.CommitIDs[0]
 		if updated.Status.LatestCommit != wantCommit {
 			t.Errorf("failed to update with latest commit, got %q, want %q", updated.Status.LatestCommit, wantCommit)
 		}
@@ -301,8 +270,8 @@ func TestReconciliation(t *testing.T) {
 		// the latest commit be the HEAD
 		updatedRepo := &sourcev1.GitRepository{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), updatedRepo))
-		if updatedRepo.Spec.Reference.Commit != testCommitIDs[0] {
-			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, testCommitIDs[0])
+		if updatedRepo.Spec.Reference.Commit != test.CommitIDs[0] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, test.CommitIDs[0])
 		}
 	})
 
@@ -312,24 +281,24 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		// both use the same commit IDs testCommitIDs[0]
+		// both use the same commit IDs test.CommitIDs[0]
 		repo := makeTestGitRepository(func(gr *sourcev1.GitRepository) {
-			gr.Spec.Reference.Commit = testCommitIDs[0]
+			gr.Spec.Reference.Commit = test.CommitIDs[0]
 		})
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
-		// But the GitRepository hasn't updated from testCommitIDs[1]
+		// But the GitRepository hasn't updated from test.CommitIDs[1]
 
-		updateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
 			r.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + testCommitIDs[1],
+				Revision: "main@sha1:" + test.CommitIDs[1],
 			}
 		})
 
 		kustomization := makeTestKustomization()
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
-		kustomization.Status.LastAppliedRevision = "main@sha1:" + testCommitIDs[1]
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[1]
 		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
@@ -338,7 +307,7 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
 
 		// the latest commit be the HEAD
-		wantCommit := "main@sha1:" + testCommitIDs[0]
+		wantCommit := "main@sha1:" + test.CommitIDs[0]
 		if deployer.Status.LatestCommit != wantCommit {
 			t.Errorf("failed to update with latest commit, got %q, want %q", deployer.Status.LatestCommit, wantCommit)
 		}
@@ -346,8 +315,8 @@ func TestReconciliation(t *testing.T) {
 		// the latest commit be the HEAD
 		updatedRepo := &sourcev1.GitRepository{}
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), updatedRepo))
-		if updatedRepo.Spec.Reference.Commit != testCommitIDs[0] {
-			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, testCommitIDs[0])
+		if updatedRepo.Spec.Reference.Commit != test.CommitIDs[0] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, test.CommitIDs[0])
 		}
 	})
 
@@ -370,7 +339,7 @@ func makeTestGitRepository(opts ...func(*sourcev1.GitRepository)) *sourcev1.GitR
 			Interval: metav1.Duration{Duration: time.Minute * 5},
 			URL:      "https://github.com/gitops-tools/gitrepository-deployer",
 			Reference: &sourcev1.GitRepositoryRef{
-				Commit: testCommitIDs[0],
+				Commit: test.CommitIDs[0],
 			},
 		},
 	}
@@ -414,15 +383,4 @@ func testRevisionLister(commitIDs []string) RevisionLister {
 		}
 		return commitIDs, nil
 	}
-}
-
-func updateRepoStatus(t *testing.T, k8sClient client.Client, repo *sourcev1.GitRepository, update func(*sourcev1.GitRepository)) {
-	t.Helper()
-	ctx := context.TODO()
-	test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), repo))
-
-	update(repo)
-	repo.Status.Artifact.LastUpdateTime = metav1.Now()
-
-	test.AssertNoError(t, k8sClient.Status().Update(ctx, repo))
 }
