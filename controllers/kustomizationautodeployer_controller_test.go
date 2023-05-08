@@ -27,7 +27,6 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr/testr"
 	"github.com/google/go-cmp/cmp"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -83,7 +82,7 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
@@ -103,13 +102,13 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		kustomization := makeTestKustomization()
-		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
-		defer cleanupResource(t, k8sClient, kustomization)
-
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
+
+		kustomization := test.NewKustomization(repo)
+		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
+		defer cleanupResource(t, k8sClient, kustomization)
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
 		test.AssertNoError(t, err)
@@ -124,7 +123,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, deployer)
 
 		// both use the same commit IDs test.CommitIDs[4]
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
@@ -133,7 +132,7 @@ func TestReconciliation(t *testing.T) {
 			}
 		})
 
-		kustomization := makeTestKustomization()
+		kustomization := test.NewKustomization(repo)
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
 		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[4]
@@ -150,7 +149,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, deployer)
 
 		// both use the same commit IDs test.CommitIDs[4]
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
@@ -160,7 +159,7 @@ func TestReconciliation(t *testing.T) {
 			}
 		})
 
-		kustomization := makeTestKustomization()
+		kustomization := test.NewKustomization(repo)
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
 		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[4]
@@ -192,7 +191,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, deployer)
 
 		// both use the same commit IDs test.CommitIDs[0]
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
@@ -202,7 +201,7 @@ func TestReconciliation(t *testing.T) {
 			}
 		})
 
-		kustomization := makeTestKustomization()
+		kustomization := test.NewKustomization(repo)
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
 		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[0]
@@ -240,7 +239,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, deployer)
 
 		// both use the same commit IDs test.CommitIDs[0]
-		repo := makeTestGitRepository()
+		repo := test.NewGitRepository()
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 
@@ -250,7 +249,7 @@ func TestReconciliation(t *testing.T) {
 			}
 		})
 
-		kustomization := makeTestKustomization()
+		kustomization := test.NewKustomization(repo)
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
 		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[0]
@@ -282,7 +281,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, deployer)
 
 		// both use the same commit IDs test.CommitIDs[0]
-		repo := makeTestGitRepository(func(gr *sourcev1.GitRepository) {
+		repo := test.NewGitRepository(func(gr *sourcev1.GitRepository) {
 			gr.Spec.Reference.Commit = test.CommitIDs[0]
 		})
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
@@ -295,7 +294,7 @@ func TestReconciliation(t *testing.T) {
 			}
 		})
 
-		kustomization := makeTestKustomization()
+		kustomization := test.NewKustomization(repo)
 		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
 		defer cleanupResource(t, k8sClient, kustomization)
 		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[1]
@@ -327,52 +326,6 @@ func cleanupResource(t *testing.T, cl client.Client, obj client.Object) {
 	if err := cl.Delete(context.TODO(), obj); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func makeTestGitRepository(opts ...func(*sourcev1.GitRepository)) *sourcev1.GitRepository {
-	gr := &sourcev1.GitRepository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-gitrepository",
-			Namespace: "default",
-		},
-		Spec: sourcev1.GitRepositorySpec{
-			Interval: metav1.Duration{Duration: time.Minute * 5},
-			URL:      "https://github.com/gitops-tools/gitrepository-deployer",
-			Reference: &sourcev1.GitRepositoryRef{
-				Commit: test.CommitIDs[0],
-			},
-		},
-	}
-
-	for _, opt := range opts {
-		opt(gr)
-	}
-
-	return gr
-}
-
-func makeTestKustomization(opts ...func(*kustomizev1.Kustomization)) *kustomizev1.Kustomization {
-	k := &kustomizev1.Kustomization{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-kustomization",
-			Namespace: "default",
-		},
-		Spec: kustomizev1.KustomizationSpec{
-			Interval: metav1.Duration{Duration: time.Minute * 5},
-			SourceRef: kustomizev1.CrossNamespaceSourceReference{
-				Kind: "GitRepository",
-				Name: "test-gitrepository",
-			},
-			Path:  "./kustomize",
-			Prune: true,
-		},
-	}
-
-	for _, opt := range opts {
-		opt(k)
-	}
-
-	return k
 }
 
 // Make this an interface!
