@@ -107,7 +107,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	logger.Info("gitRepository loaded", "branch", repoBranch, "commitID", repoCommitID, "desiredCommitID", gitRepository.Spec.Reference.Commit)
 
 	if repoBranch != kustomizationBranch {
-		logger.Info("kustomization branch does not match repo branch - no further processing")
+		logger.Info("kustomization branch does not match repo branch - no further processing", "gitRepositoryBranch", repoBranch, "kustomizationBranch", kustomizationBranch)
 		return ctrl.Result{}, nil
 	}
 
@@ -115,7 +115,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	// of the GitRepository, we can look for a new version.
 	// TODO: is this right?
 	if kustomizationCommitID != repoCommitID {
-		logger.Info("kustomization commit does not match git repository ID no further processing")
+		logger.Info("kustomization commit does not match git repository commit no further processing", "gitRepositoryCommitID", repoCommitID, "kustomizationCommitID", kustomizationCommitID)
 		return ctrl.Result{}, nil
 	}
 

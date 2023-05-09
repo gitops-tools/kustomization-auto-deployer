@@ -16,6 +16,10 @@ const (
 	// This is the default name of the Kustomization created by NewKustomization.
 	DefaultKustomizationName = "test-kustomization"
 
+	// This is the default branch for the GitRepository created by
+	// NewGitRepository.
+	DefaultGitRepositoryBranch = "main"
+
 	DefaultNamespace = "default"
 )
 
@@ -32,6 +36,7 @@ func NewGitRepository(opts ...func(*sourcev1.GitRepository)) *sourcev1.GitReposi
 			Interval: metav1.Duration{Duration: time.Minute * 5},
 			URL:      "https://github.com/gitops-tools/gitrepository-deployer",
 			Reference: &sourcev1.GitRepositoryRef{
+				Branch: DefaultGitRepositoryBranch,
 				Commit: CommitIDs[0],
 			},
 		},

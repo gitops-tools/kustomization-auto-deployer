@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"sigs.k8s.io/yaml"
 )
 
@@ -76,7 +77,13 @@ func (n *TestRepository) WriteFileAndCommit(filename string, body []byte) string
 		n.t.Fatalf("failed to add file %s: %s", filename, err)
 	}
 
-	c, err := wt.Commit(fmt.Sprintf("Test commit %s", time.Now()), &git.CommitOptions{})
+	c, err := wt.Commit(fmt.Sprintf("Test commit %s", time.Now()), &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "test user",
+			Email: "testing@example.com",
+			When:  time.Now(),
+		},
+	})
 	if err != nil {
 		n.t.Fatalf("failed to commit: %s", err)
 	}
@@ -105,7 +112,14 @@ func writeInitialCommit(t *testing.T, r *git.Repository) {
 	if _, err := wt.Add("README.md"); err != nil {
 		t.Fatal(err)
 	}
-	_, err = wt.Commit("Initial Commit", &git.CommitOptions{})
+
+	_, err = wt.Commit("Initial Commit", &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "test user",
+			Email: "testing@example.com",
+			When:  time.Now(),
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,10 +128,11 @@ func writeInitialCommit(t *testing.T, r *git.Repository) {
 func writeTestFile(t *testing.T, fs billy.Filesystem, name string, body []byte) {
 	t.Helper()
 	newFile, err := fs.Create(name)
-	defer newFile.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer newFile.Close()
+
 	if _, err := newFile.Write(body); err != nil {
 		t.Fatal(err)
 	}
