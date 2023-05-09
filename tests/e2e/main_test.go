@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -15,6 +17,7 @@ import (
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
+	"github.com/gitops-tools/kustomization-auto-deployer/test"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -22,7 +25,7 @@ import (
 )
 
 const (
-	timeout = 10 * time.Second
+	timeout = 5 * time.Second
 )
 
 var (
@@ -45,7 +48,7 @@ func TestMain(m *testing.M) {
 	if err := (&controllers.KustomizationAutoDeployerReconciler{
 		Client:         testEnv,
 		Scheme:         testEnv.GetScheme(),
-		RevisionLister: git.ListRevisionsInRepository,
+		RevisionLister: testRevisionLister(test.CommitIDs),
 	}).SetupWithManager(testEnv); err != nil {
 		panic(fmt.Sprintf("Failed to start KustomizationAutoDeployerReconciler: %v", err))
 	}
@@ -66,4 +69,14 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+// Make this an interface!
+func testRevisionLister(commitIDs []string) controllers.RevisionLister {
+	return func(ctx context.Context, url string, options git.ListOptions) ([]string, error) {
+		if options.MaxCommits > len(commitIDs) {
+			return nil, errors.New("not enough commit IDs to fulfill request")
+		}
+		return commitIDs, nil
+	}
 }
