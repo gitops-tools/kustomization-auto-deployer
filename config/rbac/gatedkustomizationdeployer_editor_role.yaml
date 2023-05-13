@@ -1,0 +1,31 @@
+# permissions for end users to edit gatedkustomizationdeployers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: gatedkustomizationdeployer-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kustomization-auto-deployer
+    app.kubernetes.io/part-of: kustomization-auto-deployer
+    app.kubernetes.io/managed-by: kustomize
+  name: gatedkustomizationdeployer-editor-role
+rules:
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - gatedkustomizationdeployers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - gatedkustomizationdeployers/status
+  verbs:
+  - get

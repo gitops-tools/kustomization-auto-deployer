@@ -17,4 +17,13 @@ resources:
   kind: KustomizationAutoDeployer
   path: github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: gitops.pro
+  group: flux
+  kind: GatedKustomizationDeployer
+  path: github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1
+  version: v1alpha1
 version: "3"

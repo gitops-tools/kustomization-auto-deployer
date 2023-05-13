@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - flux.gitops.pro
   resources:
+  - gatedkustomizationdeployers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - gatedkustomizationdeployers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - flux.gitops.pro
+  resources:
+  - gatedkustomizationdeployers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - flux.gitops.pro
+  resources:
   - kustomizationautodeployers
   verbs:
   - create
