@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	fluxv1alpha1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 )
 
 // GatedKustomizationDeployerReconciler reconciles a GatedKustomizationDeployer object
@@ -57,6 +57,6 @@ func (r *GatedKustomizationDeployerReconciler) Reconcile(ctx context.Context, re
 // SetupWithManager sets up the controller with the Manager.
 func (r *GatedKustomizationDeployerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&fluxv1alpha1.GatedKustomizationDeployer{}).
+		For(&deployerv1.GatedKustomizationDeployer{}).
 		Complete(r)
 }

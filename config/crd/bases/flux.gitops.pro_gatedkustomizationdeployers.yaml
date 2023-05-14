@@ -63,9 +63,23 @@ spec:
                     name:
                       description: Name is a string used to identify the gate.
                       type: string
+                    scheduled:
+                      description: ScheduledCheck is a time-based gate.
+                      properties:
+                        close:
+                          format: date-time
+                          type: string
+                        open:
+                          format: date-time
+                          type: string
+                      required:
+                      - close
+                      - open
+                      type: object
                   required:
                   - healthCheck
                   - name
+                  - scheduled
                   type: object
                 type: array
               interval:
