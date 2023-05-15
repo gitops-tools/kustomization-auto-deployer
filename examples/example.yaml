@@ -26,6 +26,7 @@ spec:
   interval: 15m
   ref:
     branch: "main"
+    # this cheats by setting the commit to a position in the past.
     commit: "37ee0c9be105d22edc60722af303fbd4191783c9"
   timeout: 60s
   url: https://github.com/bigkevmcd/go-demo
