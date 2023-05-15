@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
@@ -43,32 +42,38 @@ var _ gates.Gate = (*ScheduledGate)(nil)
 // }
 
 func TestCheck(t *testing.T) {
+	// 9am on the 14th May 2023
+	now := time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC)
+
 	testCases := []struct {
-		name   string
-		open   time.Time
-		closed time.Time
+		open   string
+		closed string
 		want   bool
 	}{
 		{
-			open:   time.Now(),
-			closed: time.Now(),
+			open:   "07:00",
+			closed: "17:00",
 			want:   true,
 		},
-		// {
-		// 	name:     "nested key/values",
-		// 	elements: []apiextensionsv1.JSON{{Raw: []byte(`{"cluster": "cluster","url": "url","values":{"foo":"bar"}}`)}},
-		// 	want:     []map[string]any{{"cluster": "cluster", "url": "url", "values": map[string]any{"foo": "bar"}}},
-		// },
+		{
+			open:   "10:00",
+			closed: "17:00",
+			want:   false,
+		},
 	}
 
 	for _, tt := range testCases {
-		t.Run(fmt.Sprintf("open %s, close %s", tt.open.Format("15:04:05"), tt.closed.Format("15:04:05")), func(t *testing.T) {
+		t.Run(fmt.Sprintf("open %s, close %s", tt.open, tt.closed), func(t *testing.T) {
+			gen := NewGate(logr.Discard())
+			gen.Clock = func() time.Time {
+				return now
+			}
 
-			gen := GateFactory(logr.Discard(), nil)
 			got, err := gen.Check(context.TODO(), &deployerv1.KustomizationGate{
+				Name: "testing",
 				Scheduled: &deployerv1.ScheduledCheck{
-					Open:  metav1.Time{Time: tt.open},
-					Close: metav1.Time{Time: tt.closed},
+					Open:  tt.open,
+					Close: tt.closed,
 				},
 			}, nil)
 
@@ -80,50 +85,45 @@ func TestCheck(t *testing.T) {
 	}
 }
 
-// func TestCheck_errors(t *testing.T) {
-// 	testCases := []struct {
-// 		name      string
-// 		generator *templatesv1.GitOpsSetGate
-// 		wantErr   string
-// 	}{
-// 		{
-// 			name: "bad json",
-// 			generator: &templatesv1.GitOpsSetGate{
-// 				List: &templatesv1.ListGate{
-// 					Elements: []apiextensionsv1.JSON{{Raw: []byte(`{`)}},
-// 				},
-// 			},
-// 			wantErr: "error unmarshaling list element: unexpected end of JSON input",
-// 		},
-// 		{
-// 			name:      "no generator",
-// 			generator: nil,
-// 			wantErr:   "GitOpsSet is empty",
-// 		},
-// 	}
+func TestCheck_errors(t *testing.T) {
+	testCases := []struct {
+		name    string
+		open    string
+		closed  string
+		wantErr string
+	}{
+		{
+			name:    "bad open time",
+			open:    "25:00",
+			closed:  "17:00",
+			wantErr: "testing",
+		},
+		{
+			name:    "bad closed time",
+			open:    "10:00",
+			closed:  "17:71",
+			wantErr: "testing",
+		},
+		{
+			name:    "closed before open time",
+			open:    "17:00",
+			closed:  "10:00",
+			wantErr: "testing",
+		},
+	}
 
-// 	for _, tt := range testCases {
-// 		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			gen := GateFactory(logr.Discard(), nil)
+			_, err := gen.Check(context.TODO(), &deployerv1.KustomizationGate{
+				Name: "testing",
+				Scheduled: &deployerv1.ScheduledCheck{
+					Open:  tt.open,
+					Close: tt.closed,
+				},
+			}, nil)
 
-// 			gen := GateFactory(logr.Discard(), nil)
-// 			_, err := gen.Check(context.TODO(), tt.generator, nil)
-
-// 			test.AssertErrorMatch(t, tt.wantErr, err)
-// 		})
-// 	}
-// }
-
-// func TestListGate_Interval(t *testing.T) {
-// 	gen := NewGate(logr.Discard())
-// 	sg := &templatesv1.GitOpsSetGate{
-// 		List: &templatesv1.ListGate{
-// 			Elements: []apiextensionsv1.JSON{{Raw: []byte(`{"cluster": "cluster","url": "url"}`)}},
-// 		},
-// 	}
-
-// 	d := gen.Interval(sg)
-
-// 	if d != generators.NoRequeueInterval {
-// 		t.Fatalf("got %#v want %#v", d, generators.NoRequeueInterval)
-// 	}
-// }
+			test.AssertErrorMatch(t, tt.wantErr, err)
+		})
+	}
+}

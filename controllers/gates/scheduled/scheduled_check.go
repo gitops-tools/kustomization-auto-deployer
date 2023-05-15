@@ -18,6 +18,8 @@ package scheduled
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
@@ -31,16 +33,46 @@ func GateFactory(l logr.Logger, _ client.Client) gates.Gate {
 	return NewGate(l)
 }
 
-// NewGate creates and returns a new list generator.
+// NewGate creates and returns a new ScheduledGate.
 func NewGate(l logr.Logger) *ScheduledGate {
-	return &ScheduledGate{Logger: l}
+	return &ScheduledGate{
+		Logger: l,
+		Clock:  time.Now,
+	}
 }
 
 // ScheduledGate is open based on the current time.
 type ScheduledGate struct {
 	Logger logr.Logger
+	Clock  func() time.Time
 }
 
-func (g ScheduledGate) Check(context.Context, *deployerv1.KustomizationGate, *deployerv1.GatedKustomizationDeployer) (bool, error) {
-	return false, nil
+// Check returns true if now is within the the Scheduled gate time duration.
+func (g ScheduledGate) Check(ctx context.Context, gate *deployerv1.KustomizationGate, _ *deployerv1.GatedKustomizationDeployer) (bool, error) {
+	now := g.Clock()
+
+	open, err := parseAndMerge(now, gate.Name, "open", gate.Scheduled.Open)
+	if err != nil {
+		return false, err
+	}
+
+	closed, err := parseAndMerge(now, gate.Name, "close", gate.Scheduled.Close)
+	if err != nil {
+		return false, err
+	}
+
+	if closed.Before(open) {
+		return false, fmt.Errorf("parsing Scheduled %s %v is before %v", gate.Name, gate.Scheduled.Close, gate.Scheduled.Open)
+	}
+
+	return now.After(open) && now.Before(closed), nil
+}
+
+func parseAndMerge(now time.Time, name, phase, str string) (time.Time, error) {
+	parsed, err := time.Parse("15:04", str)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse %s time for %s %q: %w", phase, name, str, err)
+	}
+
+	return time.Date(now.Year(), now.Month(), now.Day(), parsed.Hour(), parsed.Minute(), 0, 0, now.Location()), nil
 }

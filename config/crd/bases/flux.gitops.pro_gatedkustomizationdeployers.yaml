@@ -67,10 +67,11 @@ spec:
                       description: ScheduledCheck is a time-based gate.
                       properties:
                         close:
-                          format: date-time
+                          description: hh:mm for the time to "close" the gate at.
                           type: string
                         open:
-                          format: date-time
+                          description: 'TODO: These need validation! hh:mm for the
+                            time to "open" the gate at.'
                           type: string
                       required:
                       - close

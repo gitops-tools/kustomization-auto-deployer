@@ -32,8 +32,11 @@ type HealthCheck struct {
 // ScheduledCheck is a Gate that is open if the current time is between the open
 // and close times.
 type ScheduledCheck struct {
-	Open  metav1.Time `json:"open"`
-	Close metav1.Time `json:"close"`
+	// TODO: These need validation!
+	// hh:mm for the time to "open" the gate at.
+	Open string `json:"open"`
+	// hh:mm for the time to "close" the gate at.
+	Close string `json:"close"`
 }
 
 // KustomizationGate describes a gate to be checked before updating to the
