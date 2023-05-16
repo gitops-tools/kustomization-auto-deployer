@@ -31,5 +31,10 @@ metadata:
   namespace: default 
 spec:
   interval: 10m
+  gates:
+  - name: working hours
+    scheduled:
+      open: "09:00"
+      closed: "16:00"
   kustomizationRef:
     name: kustomizationautodeployer

@@ -27,14 +27,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GateFactory is a function for creating per-reconciliation gates for
+// Factory is a function for creating per-reconciliation gates for
 // the ScheduledGate.
-func GateFactory(l logr.Logger, _ client.Client) gates.Gate {
-	return NewGate(l)
+func Factory(l logr.Logger, _ client.Client) gates.Gate {
+	return New(l)
 }
 
-// NewGate creates and returns a new ScheduledGate.
-func NewGate(l logr.Logger) *ScheduledGate {
+// New creates and returns a new ScheduledGate.
+func New(l logr.Logger) *ScheduledGate {
 	return &ScheduledGate{
 		Logger: l,
 		Clock:  time.Now,
@@ -47,9 +47,13 @@ type ScheduledGate struct {
 	Clock  func() time.Time
 }
 
+// TODO: if closed is earlier than open, we could assume an "overnight" type
+// scenario.
+
 // Check returns true if now is within the the Scheduled gate time duration.
-func (g ScheduledGate) Check(ctx context.Context, gate *deployerv1.KustomizationGate, _ *deployerv1.GatedKustomizationDeployer) (bool, error) {
+func (g ScheduledGate) Check(ctx context.Context, gate *deployerv1.KustomizationGate, _ *deployerv1.KustomizationAutoDeployer) (bool, error) {
 	now := g.Clock()
+	// TODO: Logging
 
 	open, err := parseAndMerge(now, gate.Name, "open", gate.Scheduled.Open)
 	if err != nil {

@@ -35,6 +35,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 )
 
@@ -51,6 +52,7 @@ type KustomizationAutoDeployerReconciler struct {
 	Scheme *runtime.Scheme
 
 	RevisionLister RevisionLister
+	GateFactories  map[string]gates.GateFactory
 }
 
 //+kubebuilder:rbac:groups=flux.gitops.pro,resources=kustomizationautodeployers,verbs=get;list;watch;create;update;patch;delete
@@ -167,6 +169,31 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	}
 
 	logger.Info("identified next commit - patching GitRepository", "nextCommitID", nextCommitToDeploy, "repositoryName", gitRepository.GetName(), "repositoryNamespace", gitRepository.GetNamespace())
+
+	instantiatedGates := map[string]gates.Gate{}
+	for k, factory := range r.GateFactories {
+		instantiatedGates[k] = factory(logger, r.Client)
+	}
+
+	open, err := gates.Check(ctx, &deployer, instantiatedGates)
+	if err != nil {
+		logger.Error(err, "error checking gates")
+		return ctrl.Result{}, err
+	}
+
+	if !open {
+		logger.Info("gates are not currently open")
+		// TODO: Refactor this to avoid duplication!
+		deployer.Status.LatestCommit = commitReference(repoBranch, nextCommitToDeploy)
+		deployer.Status.ObservedGeneration = deployer.Generation
+		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
+			logger.Error(err, "failed to reconcile")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
 	gitRepository.Spec.Reference.Commit = nextCommitToDeploy
 
 	if err := patchHelper.Patch(ctx, &gitRepository); err != nil {
@@ -203,7 +230,7 @@ func (r *KustomizationAutoDeployerReconciler) SetupWithManager(mgr ctrl.Manager)
 		context.TODO(), &deployerv1.KustomizationAutoDeployer{}, kustomizationIndexKey, func(o client.Object) []string {
 			gt, ok := o.(*deployerv1.KustomizationAutoDeployer)
 			if !ok {
-				panic(fmt.Sprintf("Expected a GitRepositoryTracker, got %T", o))
+				panic(fmt.Sprintf("Expected a KustomizationAutoDeployer, got %T", o))
 			}
 
 			return []string{fmt.Sprintf("%s/%s", gt.GetNamespace(), gt.Spec.KustomizationRef.Name)}
@@ -220,7 +247,6 @@ func (r *KustomizationAutoDeployerReconciler) SetupWithManager(mgr ctrl.Manager)
 		Complete(r)
 }
 
-// TODO: Fold these two into a closure with the index key!
 func (r *KustomizationAutoDeployerReconciler) kustomizationToAutoDeployer(ctx context.Context, obj client.Object) []reconcile.Request {
 	var list deployerv1.KustomizationAutoDeployerList
 

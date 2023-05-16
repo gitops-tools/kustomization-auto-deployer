@@ -44,6 +44,45 @@ spec:
                 maximum: 100
                 minimum: 5
                 type: integer
+              gates:
+                description: Gates are the checks applied before advancing the commit
+                  in the GitRepository for the referenced Kustomization.
+                items:
+                  description: KustomizationGate describes a gate to be checked before
+                    updating to the latest commit.
+                  properties:
+                    healthCheck:
+                      description: HealthCheck is a generic URL checker.
+                      properties:
+                        url:
+                          description: URL is a  generic catch-all, query the configured
+                            URL and if returns anything other than a 200 response,
+                            the check fails.
+                          type: string
+                      type: object
+                    name:
+                      description: Name is a string used to identify the gate.
+                      type: string
+                    scheduled:
+                      description: ScheduledCheck is a time-based gate.
+                      properties:
+                        close:
+                          description: hh:mm for the time to "close" the gate at.
+                          type: string
+                        open:
+                          description: 'TODO: These need validation! hh:mm for the
+                            time to "open" the gate at.'
+                          type: string
+                      required:
+                      - close
+                      - open
+                      type: object
+                  required:
+                  - healthCheck
+                  - name
+                  - scheduled
+                  type: object
+                type: array
               interval:
                 description: Interval at which to check the GitRepository for updates.
                 pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$

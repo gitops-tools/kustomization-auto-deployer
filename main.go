@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -36,6 +37,9 @@ import (
 
 	fluxv1alpha1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/healthcheck"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/scheduled"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 	//+kubebuilder:scaffold:imports
 )
@@ -99,6 +103,10 @@ func main() {
 		Client:         mgr.GetClient(),
 		Scheme:         mgr.GetScheme(),
 		RevisionLister: git.ListRevisionsInRepository,
+		GateFactories: map[string]gates.GateFactory{
+			"HealthCheck": healthcheck.Factory(http.DefaultClient),
+			"Scheduled":   scheduled.Factory,
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KustomizationAutoDeployer")
 		os.Exit(1)

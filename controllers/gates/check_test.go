@@ -17,23 +17,23 @@ limitations under the License.
 package gates
 
 import (
-	"context"
-
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"testing"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 )
 
-// GateFactory is a way to create a per-reconciliation gate.
-type GateFactory func(logr.Logger, client.Client) Gate
+func TestCheck(t *testing.T) {
+	checkTests := []struct {
+		name     string
+		deployer *deployerv1.KustomizationAutoDeployer
+	}{
+		{
+			"no gates should fail open",
+		},
+	}
 
-// Gate defines the interface implemented by all gates.
-type Gate interface {
-	// Check returns true if the Gate is open.
-	//
-	// Errors are only for exceptional cases.
-	Check(context.Context, *deployerv1.KustomizationGate, *deployerv1.KustomizationAutoDeployer) (bool, error)
-
-	// TODO: Interval type method for determining when to make the next check?
+	for _, tt := range checkTests {
+		t.Run(tt.name, func(t *testing.T) {
+		})
+	}
 }

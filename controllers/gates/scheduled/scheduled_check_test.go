@@ -31,16 +31,6 @@ import (
 
 var _ gates.Gate = (*ScheduledGate)(nil)
 
-// func TestCheck_with_no_times(t *testing.T) {
-// 	gen := GateFactory(logr.Discard(), nil)
-// 	got, err := gen.Check(context.TODO(), &deployerv1.KustomizationGate{}, nil)
-
-// 	test.AssertNoError(t, err)
-// 	if got != true {
-// 		t.Errorf("got %v, want %v with  generator", got, true)
-// 	}
-// }
-
 func TestCheck(t *testing.T) {
 	// 9am on the 14th May 2023
 	now := time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC)
@@ -64,7 +54,7 @@ func TestCheck(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(fmt.Sprintf("open %s, close %s", tt.open, tt.closed), func(t *testing.T) {
-			gen := NewGate(logr.Discard())
+			gen := New(logr.Discard())
 			gen.Clock = func() time.Time {
 				return now
 			}
@@ -114,7 +104,7 @@ func TestCheck_errors(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			gen := GateFactory(logr.Discard(), nil)
+			gen := Factory(logr.Discard(), nil)
 			_, err := gen.Check(context.TODO(), &deployerv1.KustomizationGate{
 				Name: "testing",
 				Scheduled: &deployerv1.ScheduledCheck{

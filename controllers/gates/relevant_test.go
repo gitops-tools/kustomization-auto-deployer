@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package gates
+package gates_test
+
+// This is in a _test package to prevent import cycles.
 
 import (
 	"errors"
@@ -22,13 +24,14 @@ import (
 	"testing"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/healthcheck"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/scheduled"
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 )
 
 func TestFindRelevantGates(t *testing.T) {
-	allGates := map[string]Gate{
+	allGates := map[string]gates.Gate{
 		"HealthCheck": &healthcheck.HealthCheckGate{},
 		"Scheduled":   &scheduled.ScheduledGate{},
 	}
@@ -36,19 +39,19 @@ func TestFindRelevantGates(t *testing.T) {
 	tests := []struct {
 		name string
 		gate deployerv1.KustomizationGate
-		want []Gate
+		want []gates.Gate
 	}{
 		{
 			name: "no gates",
 			gate: deployerv1.KustomizationGate{},
-			want: []Gate{},
+			want: []gates.Gate{},
 		},
 		{
 			name: "one gate",
 			gate: deployerv1.KustomizationGate{
 				HealthCheck: &deployerv1.HealthCheck{},
 			},
-			want: []Gate{
+			want: []gates.Gate{
 				&healthcheck.HealthCheckGate{},
 			},
 		},
@@ -58,7 +61,7 @@ func TestFindRelevantGates(t *testing.T) {
 				HealthCheck: &deployerv1.HealthCheck{},
 				Scheduled:   &deployerv1.ScheduledCheck{},
 			},
-			want: []Gate{
+			want: []gates.Gate{
 				&healthcheck.HealthCheckGate{},
 				&scheduled.ScheduledGate{},
 			},
@@ -67,23 +70,23 @@ func TestFindRelevantGates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := FindRelevantGates(tt.gate, allGates); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := gates.FindRelevantGates(tt.gate, allGates); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FindRelevantGates() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestFindReleveantGatesErrors(t *testing.T) {
+func TestFindRelevantGatesErrors(t *testing.T) {
 	tests := []struct {
 		name     string
-		allGates map[string]Gate
+		allGates map[string]gates.Gate
 		gate     deployerv1.KustomizationGate
 		err      string
 	}{
 		{
 			name: "unknown gate",
-			allGates: map[string]Gate{
+			allGates: map[string]gates.Gate{
 				"HealthCheck": &healthcheck.HealthCheckGate{},
 			},
 			gate: deployerv1.KustomizationGate{
@@ -96,12 +99,12 @@ func TestFindReleveantGatesErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := FindRelevantGates(tt.gate, tt.allGates)
+			_, err := gates.FindRelevantGates(tt.gate, tt.allGates)
 			test.AssertErrorMatch(t, tt.err, err)
-			if !errors.As(err, &GateNotEnabledError{}) {
+			if !errors.As(err, &gates.GateNotEnabledError{}) {
 				t.Errorf("FindRelevantGates() error should be a GateNotEnabledError")
 			}
-			if !errors.Is(err, GateNotEnabledError{Name: "Scheduled"}) {
+			if !errors.Is(err, gates.GateNotEnabledError{Name: "Scheduled"}) {
 				t.Errorf(`FindRelevantGates() error should be GateNotEnabledError{Name: "Scheduled"}`)
 			}
 		})

@@ -77,7 +77,7 @@ type KustomizationAutoDeployerSpec struct {
 
 	// Gates are the checks applied before advancing the commit in the
 	// GitRepository for the referenced Kustomization.
-	Gates []KustomizationGate `json:"gate,omitempty"`
+	Gates []KustomizationGate `json:"gates,omitempty"`
 }
 
 // KustomizationAutoDeployerStatus defines the observed state of KustomizationAutoDeployer

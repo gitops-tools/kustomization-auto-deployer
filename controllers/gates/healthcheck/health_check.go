@@ -26,15 +26,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GateFactory is a function for creating per-reconciliation gates for
+// Factory is a function for creating per-reconciliation gates for
 // the HealthCheckGate.
-func GateFactory(l logr.Logger, _ client.Client) gates.Gate {
-	return NewGate(l)
+func Factory(httpClient *http.Client) gates.GateFactory {
+	return func(l logr.Logger, c client.Client) gates.Gate {
+		return New(l, httpClient)
+	}
 }
 
-// NewGate creates and returns a new HealthCheck gate.
-func NewGate(l logr.Logger, httpClient *http.Client) *HealthCheckGate {
-	return &HealthCheckGateGate{
+// New creates and returns a new HealthCheck gate.
+func New(l logr.Logger, httpClient *http.Client) *HealthCheckGate {
+	return &HealthCheckGate{
 		Logger:     l,
 		HTTPClient: httpClient,
 	}
@@ -50,6 +52,20 @@ type HealthCheckGate struct {
 }
 
 // Check returns true if the URL returns a 200 response.
-func (g HealthCheckGate) Check(context.Context, deployerv1.KustomizationGate, deployerv1.GatedKustomizationDeployer) (bool, error) {
-	return false, nil
+func (g HealthCheckGate) Check(ctx context.Context, gate *deployerv1.KustomizationGate, _ *deployerv1.KustomizationAutoDeployer) (bool, error) {
+	// TODO: logging
+
+	req, err := http.NewRequest(http.MethodGet, gate.HealthCheck.URL, nil)
+	if err != nil {
+		// TODO: improve this error!
+		return false, err
+	}
+
+	resp, err := g.HTTPClient.Do(req)
+	if err != nil {
+		// TODO: improve this error!
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
 }
