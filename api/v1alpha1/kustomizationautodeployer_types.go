@@ -21,6 +21,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// HealthCheck is a Gate that fetches a URL and is open if the requests are
+// successful.
+type HealthCheck struct {
+	// URL is a  generic catch-all, query the configured URL and if returns
+	// anything other than a 200 response, the check fails.
+	URL string `json:"url,omitempty"`
+}
+
+// ScheduledCheck is a Gate that is open if the current time is between the open
+// and close times.
+type ScheduledCheck struct {
+	// TODO: These need validation!
+	// hh:mm for the time to "open" the gate at.
+	Open string `json:"open"`
+	// hh:mm for the time to "close" the gate at.
+	Close string `json:"close"`
+}
+
+// KustomizationGate describes a gate to be checked before updating to the
+// latest commit.
+type KustomizationGate struct {
+	// Name is a string used to identify the gate.
+	Name string `json:"name"`
+
+	// HealthCheck is a generic URL checker.
+	HealthCheck *HealthCheck `json:"healthCheck"`
+
+	// ScheduledCheck is a time-based gate.
+	Scheduled *ScheduledCheck `json:"scheduled"`
+}
+
 // KustomizationAutoDeployerSpec defines the desired state of KustomizationAutoDeployer
 type KustomizationAutoDeployerSpec struct {
 	// The Kustomization resource to track and wait for new commits to be
@@ -43,6 +74,10 @@ type KustomizationAutoDeployerSpec struct {
 	// +kubebuilder:validation:Minimum:=5
 	// +kubebuilder:validation:Maximum:=100
 	CommitLimit int `json:"commitLimit,omitempty"`
+
+	// Gates are the checks applied before advancing the commit in the
+	// GitRepository for the referenced Kustomization.
+	Gates []KustomizationGate `json:"gate,omitempty"`
 }
 
 // KustomizationAutoDeployerStatus defines the observed state of KustomizationAutoDeployer
