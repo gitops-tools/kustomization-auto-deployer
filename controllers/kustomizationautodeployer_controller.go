@@ -21,7 +21,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/patch"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -175,7 +178,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 		instantiatedGates[k] = factory(logger, r.Client)
 	}
 
-	open, err := gates.Check(ctx, &deployer, instantiatedGates)
+	open, _, err := gates.Check(ctx, &deployer, instantiatedGates)
 	if err != nil {
 		logger.Error(err, "error checking gates")
 		return ctrl.Result{}, err
@@ -183,9 +186,9 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 
 	if !open {
 		logger.Info("gates are not currently open")
+		// TODO: identify the closed gates from the response.
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GatesClosedReason, "gates are currently closed")
 		// TODO: Refactor this to avoid duplication!
-		deployer.Status.LatestCommit = commitReference(repoBranch, nextCommitToDeploy)
-		deployer.Status.ObservedGeneration = deployer.Generation
 		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 			logger.Error(err, "failed to reconcile")
 			return ctrl.Result{}, err
@@ -294,4 +297,15 @@ func stringIndex(s string, ss []string) int {
 
 func commitReference(branch, commitID string) string {
 	return branch + "@sha1:" + commitID
+}
+
+func setDeployerReadiness(deployer *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, reason, message string) {
+	deployer.Status.ObservedGeneration = deployer.ObjectMeta.Generation
+	newCondition := metav1.Condition{
+		Type:    meta.ReadyCondition,
+		Status:  status,
+		Reason:  reason,
+		Message: message,
+	}
+	apimeta.SetStatusCondition(&deployer.Status.Conditions, newCondition)
 }

@@ -3,14 +3,18 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/onsi/gomega"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 )
@@ -23,7 +27,6 @@ var kustomizationGVK = schema.GroupVersionKind{
 
 func TestReconciling(t *testing.T) {
 	ctx := context.TODO()
-
 	repo := test.NewGitRepository()
 	test.AssertNoError(t, testEnv.Create(ctx, repo))
 	defer cleanupResource(t, testEnv, repo)
@@ -77,6 +80,55 @@ func TestReconciling(t *testing.T) {
 		}
 	})
 
+	waitForDeployerCheck(t, testEnv, client.ObjectKeyFromObject(kd), func(depl deployerv1.KustomizationAutoDeployer) bool {
+		return depl.Status.LatestCommit == fmt.Sprintf("%s@sha1:%s", repo.Spec.Reference.Branch, test.CommitIDs[0])
+	})
+}
+
+func TestReconciling_with_gates(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "test error", http.StatusNotFound)
+	}))
+	t.Cleanup(ts.Close)
+
+	ctx := context.TODO()
+	repo := test.NewGitRepository()
+	test.AssertNoError(t, testEnv.Create(ctx, repo))
+	defer cleanupResource(t, testEnv, repo)
+
+	kustomization := test.NewKustomization(repo)
+	test.AssertNoError(t, testEnv.Create(ctx, kustomization))
+	defer cleanupResource(t, testEnv, kustomization)
+	kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[2]
+	test.AssertNoError(t, testEnv.Status().Update(ctx, kustomization))
+
+	test.UpdateRepoStatus(t, testEnv, repo, func(r *sourcev1.GitRepository) {
+		r.Status.Artifact = &sourcev1.Artifact{
+			Revision: "main@sha1:" + test.CommitIDs[2],
+		}
+	})
+
+	kd := test.NewKustomizationAutoDeployer(func(kd *deployerv1.KustomizationAutoDeployer) {
+		kd.Spec.Gates = []deployerv1.KustomizationGate{
+			{
+				Name: "accessing a test server",
+				HealthCheck: &deployerv1.HealthCheck{
+					URL: ts.URL,
+				},
+			},
+		}
+	})
+	test.AssertNoError(t, testEnv.Create(ctx, kd))
+	defer cleanupResource(t, testEnv, kd)
+
+	waitForDeployerCheck(t, testEnv, client.ObjectKeyFromObject(kd), func(depl deployerv1.KustomizationAutoDeployer) bool {
+		cond := apimeta.FindStatusCondition(depl.Status.Conditions, meta.ReadyCondition)
+		if cond == nil {
+			return false
+		}
+
+		return cond.Message == "gates are currently closed"
+	})
 }
 
 func cleanupResource(t *testing.T, cl client.Client, obj client.Object) {

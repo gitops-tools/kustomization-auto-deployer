@@ -188,8 +188,6 @@ spec:
                   recently observed KustomizationAutoDeployer.
                 format: int64
                 type: integer
-            required:
-            - latestCommit
             type: object
         type: object
     served: true

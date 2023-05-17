@@ -61,11 +61,15 @@ func (g HealthCheckGate) Check(ctx context.Context, gate *deployerv1.Kustomizati
 		return false, err
 	}
 
+	g.Logger.Info("getting healthcheck", "gate", gate.Name, "url", gate.HealthCheck.URL)
+
 	resp, err := g.HTTPClient.Do(req)
 	if err != nil {
 		// TODO: improve this error!
 		return false, err
 	}
+
+	g.Logger.Info("healthcheck complete", "gate", gate.Name, "statusCode", resp.StatusCode)
 
 	return resp.StatusCode == http.StatusOK, nil
 }

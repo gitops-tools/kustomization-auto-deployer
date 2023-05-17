@@ -21,6 +21,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// GatesClosedReason is set when further deployments can't continue because
+	// the gates are currently closed.
+	GatesClosedReason string = "GatesClosed"
+)
+
 // HealthCheck is a Gate that fetches a URL and is open if the requests are
 // successful.
 type HealthCheck struct {
@@ -90,13 +96,15 @@ type KustomizationAutoDeployerSpec struct {
 
 	// Gates are the checks applied before advancing the commit in the
 	// GitRepository for the referenced Kustomization.
+	// +optional
 	Gates []KustomizationGate `json:"gates,omitempty"`
 }
 
 // KustomizationAutoDeployerStatus defines the observed state of KustomizationAutoDeployer
 type KustomizationAutoDeployerStatus struct {
 	// LatestCommit is the latest commit processed by the Kustomization.
-	LatestCommit string `json:"latestCommit"`
+	// +optional
+	LatestCommit string `json:"latestCommit,omitempty"`
 
 	// ObservedGeneration reflects the generation of the most recently observed
 	// KustomizationAutoDeployer.
@@ -118,6 +126,11 @@ type KustomizationAutoDeployer struct {
 
 	Spec   KustomizationAutoDeployerSpec   `json:"spec,omitempty"`
 	Status KustomizationAutoDeployerStatus `json:"status,omitempty"`
+}
+
+// SetConditions sets the status conditions on the object.
+func (in *KustomizationAutoDeployer) SetConditions(conditions []metav1.Condition) {
+	in.Status.Conditions = conditions
 }
 
 //+kubebuilder:object:root=true

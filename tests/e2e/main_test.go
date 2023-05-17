@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,6 +17,9 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/healthcheck"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/scheduled"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 
@@ -49,6 +53,10 @@ func TestMain(m *testing.M) {
 		Client:         testEnv,
 		Scheme:         testEnv.GetScheme(),
 		RevisionLister: testRevisionLister(test.CommitIDs),
+		GateFactories: map[string]gates.GateFactory{
+			"HealthCheck": healthcheck.Factory(http.DefaultClient),
+			"Scheduled":   scheduled.Factory,
+		},
 	}).SetupWithManager(testEnv); err != nil {
 		panic(fmt.Sprintf("Failed to start KustomizationAutoDeployerReconciler: %v", err))
 	}
