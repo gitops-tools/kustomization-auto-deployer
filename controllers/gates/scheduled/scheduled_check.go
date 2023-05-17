@@ -34,11 +34,17 @@ func Factory(l logr.Logger, _ client.Client) gates.Gate {
 }
 
 // New creates and returns a new ScheduledGate.
-func New(l logr.Logger) *ScheduledGate {
-	return &ScheduledGate{
+func New(l logr.Logger, opts ...func(*ScheduledGate)) *ScheduledGate {
+	sg := &ScheduledGate{
 		Logger: l,
 		Clock:  time.Now,
 	}
+
+	for _, opt := range opts {
+		opt(sg)
+	}
+
+	return sg
 }
 
 // ScheduledGate is open based on the current time.

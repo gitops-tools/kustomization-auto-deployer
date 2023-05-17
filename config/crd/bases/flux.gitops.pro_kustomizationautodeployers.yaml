@@ -38,7 +38,7 @@ spec:
               KustomizationAutoDeployer
             properties:
               commitLimit:
-                default: 20
+                default: 100
                 description: "CloneDepth limits the number of commits to get from
                   the GitRepository. \n This is an optimisation for fetching commits."
                 maximum: 100
@@ -54,11 +54,18 @@ spec:
                     healthCheck:
                       description: HealthCheck is a generic URL checker.
                       properties:
+                        interval:
+                          description: Interval at which to check the URL for updates.
+                          pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$
+                          type: string
                         url:
                           description: URL is a  generic catch-all, query the configured
                             URL and if returns anything other than a 200 response,
                             the check fails.
                           type: string
+                      required:
+                      - interval
+                      - url
                       type: object
                     name:
                       description: Name is a string used to identify the gate.
@@ -78,9 +85,7 @@ spec:
                       - open
                       type: object
                   required:
-                  - healthCheck
                   - name
-                  - scheduled
                   type: object
                 type: array
               interval:
