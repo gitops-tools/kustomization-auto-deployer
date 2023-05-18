@@ -24,9 +24,12 @@ import (
 	"time"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr/testr"
 	"github.com/google/go-cmp/cmp"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -76,27 +79,19 @@ func TestReconciliation(t *testing.T) {
 
 	test.AssertNoError(t, reconciler.SetupWithManager(mgr))
 
-	t.Run("reconciling GitRepository with missing Kustomization", func(t *testing.T) {
+	t.Run("reconciling with missing Kustomization", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
-		deployer := test.NewKustomizationAutoDeployer()
+		deployer := test.NewKustomizationAutoDeployer(func(d *deployerv1.KustomizationAutoDeployer) {
+			d.Spec.KustomizationRef.Name = "missing-kustomization-name"
+		})
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
 		defer cleanupResource(t, k8sClient, deployer)
 
-		repo := test.NewGitRepository()
-		test.AssertNoError(t, k8sClient.Create(ctx, repo))
-		defer cleanupResource(t, k8sClient, repo)
-
-		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			repo.Status.Artifact = &sourcev1.Artifact{
-				Revision: "main@sha1:" + test.CommitIDs[0],
-			}
-		})
-
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
-		test.AssertErrorMatch(t, "failed to load kustomizationRef test-kustomization", err)
+		test.AssertErrorMatch(t, "failed to load kustomizationRef missing-kustomization-name", err)
 	})
 
-	t.Run("reconciling GitRepository with unpopulated GitRepository artifact", func(t *testing.T) {
+	t.Run("reconciling Deployer with unpopulated GitRepository artifact", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
 		deployer := test.NewKustomizationAutoDeployer()
 		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
@@ -114,7 +109,7 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, err)
 	})
 
-	t.Run("reconciling error listing commits", func(t *testing.T) {
+	t.Run("error listing commits", func(t *testing.T) {
 		ctx := log.IntoContext(context.TODO(), testr.New(t))
 		deployer := test.NewKustomizationAutoDeployer(func(tr *deployerv1.KustomizationAutoDeployer) {
 			tr.Spec.CommitLimit = 40
@@ -140,6 +135,9 @@ func TestReconciliation(t *testing.T) {
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
 		test.AssertErrorMatch(t, "not enough commit IDs to fulfill request", err)
+
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
+		assertDeployerCondition(t, deployer, metav1.ConditionFalse, meta.ReadyCondition, "not enough commit IDs to fulfill request")
 	})
 
 	t.Run("reconciling GitRepository with non-head commit", func(t *testing.T) {
@@ -335,5 +333,16 @@ func testRevisionLister(commitIDs []string) RevisionLister {
 			return nil, errors.New("not enough commit IDs to fulfill request")
 		}
 		return commitIDs, nil
+	}
+}
+
+func assertDeployerCondition(t *testing.T, kd *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, condType, msg string) {
+	t.Helper()
+	cond := apimeta.FindStatusCondition(kd.Status.Conditions, condType)
+	if cond == nil {
+		t.Fatalf("failed to find matching status condition for type %s in %#v", condType, kd.Status.Conditions)
+	}
+	if cond.Message != msg {
+		t.Fatalf("got %s, want %s", cond.Message, msg)
 	}
 }

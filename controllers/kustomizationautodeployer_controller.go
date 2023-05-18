@@ -126,9 +126,14 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	revisions, err := r.RevisionLister(ctx, gitRepository.Spec.URL, git.ListOptions{MaxCommits: deployer.Spec.CommitLimit})
 	if err != nil {
 		logger.Error(err, "listing revisions", "url", gitRepository.Spec.URL)
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.RevisionsErrorReason, err.Error())
+		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
+			logger.Error(err, "failed to update deployer status")
+		}
 		return ctrl.Result{}, fmt.Errorf("failed to list revisions in repo %s: %w", gitRepository.Spec.URL, err)
 	}
 
+	// TODO: We could indicate how many commits behind we are.
 	currentCommitIndex := stringIndex(kustomizationCommitID, revisions)
 	if currentCommitIndex < 1 {
 		logger.Info("no changes to deploy")

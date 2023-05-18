@@ -25,6 +25,10 @@ const (
 	// GatesClosedReason is set when further deployments can't continue because
 	// the gates are currently closed.
 	GatesClosedReason string = "GatesClosed"
+
+	// RevisionsErrorReason is set when we couldn't list the revisions in the
+	// upstream repository.
+	RevisionsErrorReason string = "RevisionsError"
 )
 
 // HealthCheck is a Gate that fetches a URL and is open if the requests are
