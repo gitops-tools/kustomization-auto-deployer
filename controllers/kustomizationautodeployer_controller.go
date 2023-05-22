@@ -81,6 +81,10 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	var kustomization kustomizev1.Kustomization
 	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: deployer.Spec.KustomizationRef.Name}, &kustomization); err != nil {
 		logger.Error(err, "loading Kustomization for KustomizationAutoDeployer")
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.FailedToLoadKustomizationReason, "referenced Kustomization could not be loaded")
+		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
+			logger.Error(err, "failed to update deployer status")
+		}
 		return ctrl.Result{}, fmt.Errorf("failed to load kustomizationRef %s: %w", deployer.Spec.KustomizationRef.Name, err)
 	}
 
@@ -95,15 +99,20 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	}
 
 	// TODO: Check that the SourceRef is to a GitRepository
-	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: sourceNamespace, Name: kustomization.Spec.SourceRef.Name}, &gitRepository); err != nil {
+	sourceRefObjectKey := client.ObjectKey{Namespace: sourceNamespace, Name: kustomization.Spec.SourceRef.Name}
+	if err := r.Client.Get(ctx, sourceRefObjectKey, &gitRepository); err != nil {
 		logger.Error(err, "loading GitRepository for KustomizationAutoDeployerReconciler")
-		return ctrl.Result{}, fmt.Errorf("failed to load sourceRef %s/%s: %w", sourceNamespace, kustomization.Spec.SourceRef.Name, err)
+		return ctrl.Result{}, fmt.Errorf("failed to load sourceRef %s: %w", sourceRefObjectKey, err)
 	}
 
 	// TODO: if the GitRepository is using a branch and not a ref, this is an error
 	// TODO: What if the Artifact is not available - this will panic!
 	if gitRepository.Status.Artifact == nil {
 		logger.Info("git repository status not yet populated")
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GitRepositoryNotPopulatedReason, fmt.Sprintf("GitRepository %s does not have an artifact", sourceRefObjectKey))
+		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
+			logger.Error(err, "failed to update deployer status")
+		}
 		return ctrl.Result{}, nil
 	}
 

@@ -89,6 +89,9 @@ func TestReconciliation(t *testing.T) {
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
 		test.AssertErrorMatch(t, "failed to load kustomizationRef missing-kustomization-name", err)
+
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
+		assertDeployerCondition(t, deployer, metav1.ConditionFalse, meta.ReadyCondition, deployerv1.FailedToLoadKustomizationReason, "referenced Kustomization could not be loaded")
 	})
 
 	t.Run("reconciling Deployer with unpopulated GitRepository artifact", func(t *testing.T) {
@@ -107,6 +110,9 @@ func TestReconciliation(t *testing.T) {
 
 		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
 		test.AssertNoError(t, err)
+
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
+		assertDeployerCondition(t, deployer, metav1.ConditionFalse, meta.ReadyCondition, deployerv1.GitRepositoryNotPopulatedReason, "GitRepository default/test-gitrepository does not have an artifact")
 	})
 
 	t.Run("error listing commits", func(t *testing.T) {
@@ -137,7 +143,7 @@ func TestReconciliation(t *testing.T) {
 		test.AssertErrorMatch(t, "not enough commit IDs to fulfill request", err)
 
 		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
-		assertDeployerCondition(t, deployer, metav1.ConditionFalse, meta.ReadyCondition, "not enough commit IDs to fulfill request")
+		assertDeployerCondition(t, deployer, metav1.ConditionFalse, meta.ReadyCondition, deployerv1.RevisionsErrorReason, "not enough commit IDs to fulfill request")
 	})
 
 	t.Run("reconciling GitRepository with non-head commit", func(t *testing.T) {
@@ -336,13 +342,18 @@ func testRevisionLister(commitIDs []string) RevisionLister {
 	}
 }
 
-func assertDeployerCondition(t *testing.T, kd *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, condType, msg string) {
+func assertDeployerCondition(t *testing.T, kd *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, condType, wantReason, msg string) {
 	t.Helper()
 	cond := apimeta.FindStatusCondition(kd.Status.Conditions, condType)
 	if cond == nil {
 		t.Fatalf("failed to find matching status condition for type %s in %#v", condType, kd.Status.Conditions)
 	}
+
+	if cond.Reason != wantReason {
+		t.Errorf("got Reason %s, want %s", cond.Reason, wantReason)
+	}
+
 	if cond.Message != msg {
-		t.Fatalf("got %s, want %s", cond.Message, msg)
+		t.Errorf("got Message %s, want %s", cond.Message, msg)
 	}
 }

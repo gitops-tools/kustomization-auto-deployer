@@ -26,6 +26,14 @@ const (
 	// the gates are currently closed.
 	GatesClosedReason string = "GatesClosed"
 
+	// FailedToLoadKustomizationReason indicates that the referenced
+	// Kustomization could not be loaded.
+	FailedToLoadKustomizationReason string = "FailedToLoadKustomization"
+
+	// GitRepositoryNotPopulatedReason indicates that the GitRepository
+	// associated with the Kustomization has not updated successfully.
+	GitRepositoryNotPopulatedReason string = "GitRepositoryNotLoaded"
+
 	// RevisionsErrorReason is set when we couldn't list the revisions in the
 	// upstream repository.
 	RevisionsErrorReason string = "RevisionsError"
