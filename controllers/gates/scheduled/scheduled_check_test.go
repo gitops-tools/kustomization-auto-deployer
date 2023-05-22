@@ -31,7 +31,7 @@ import (
 
 var _ gates.Gate = (*ScheduledGate)(nil)
 
-func TestCheck(t *testing.T) {
+func TestScheduledGate_Check(t *testing.T) {
 	// 9am on the 14th May 2023
 	now := time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC)
 
@@ -75,7 +75,7 @@ func TestCheck(t *testing.T) {
 	}
 }
 
-func TestCheck_errors(t *testing.T) {
+func TestScheduledGate_Check_errors(t *testing.T) {
 	testCases := []struct {
 		name    string
 		open    string
@@ -115,5 +115,28 @@ func TestCheck_errors(t *testing.T) {
 
 			test.AssertErrorMatch(t, tt.wantErr, err)
 		})
+	}
+}
+
+func TestScheduledGate_Interval(t *testing.T) {
+	// 9am on the 14th May 2023
+	now := time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC)
+
+	gate := &deployerv1.KustomizationGate{
+		Name: "testing",
+		Scheduled: &deployerv1.ScheduledCheck{
+			Open:  "17:00",
+			Close: "19:00",
+		},
+	}
+
+	gen := New(logr.Discard(), func(s *ScheduledGate) {
+		s.Clock = func() time.Time {
+			return now
+		}
+	})
+
+	if i := gen.Interval(gate); i != time.Minute*5 {
+		t.Fatalf("Interval() got %v, want %v", i, time.Minute*5)
 	}
 }

@@ -18,6 +18,7 @@ package gates
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,5 +36,13 @@ type Gate interface {
 	// Errors are only for exceptional cases.
 	Check(context.Context, *deployerv1.KustomizationGate, *deployerv1.KustomizationAutoDeployer) (bool, error)
 
-	// TODO: Interval type method for determining when to make the next check?
+	// Interval is the time after which a Gate should be checked.
+	//
+	// A Gate can return an empty time.Duration value if it should not be
+	// rechecked after a period.
+	Interval(*deployerv1.KustomizationGate) time.Duration
 }
+
+// NoRequeueInterval is a simple default value that can be used to indicate that
+// a Gate should not requeue after a time duration.
+var NoRequeueInterval time.Duration

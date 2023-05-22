@@ -22,6 +22,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
@@ -31,7 +34,7 @@ import (
 
 var _ gates.Gate = (*HealthCheckGate)(nil)
 
-func TestCheck(t *testing.T) {
+func TestHealthCheckGate_Check(t *testing.T) {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/closed":
@@ -78,45 +81,17 @@ func TestCheck(t *testing.T) {
 	}
 }
 
-func TestCheck_errors(t *testing.T) {
-	// testCases := []struct {
-	// 	name    string
-	// 	open    string
-	// 	closed  string
-	// 	wantErr string
-	// }{
-	// 	{
-	// 		name:    "bad open time",
-	// 		open:    "25:00",
-	// 		closed:  "17:00",
-	// 		wantErr: "testing",
-	// 	},
-	// 	{
-	// 		name:    "bad closed time",
-	// 		open:    "10:00",
-	// 		closed:  "17:71",
-	// 		wantErr: "testing",
-	// 	},
-	// 	{
-	// 		name:    "closed before open time",
-	// 		open:    "17:00",
-	// 		closed:  "10:00",
-	// 		wantErr: "testing",
-	// 	},
-	// }
+func TestHealthCheckGate_Interval(t *testing.T) {
+	gate := &deployerv1.KustomizationGate{
+		Name: "testing",
+		HealthCheck: &deployerv1.HealthCheck{
+			URL:      "https://example.com/",
+			Interval: metav1.Duration{Duration: time.Minute * 5},
+		},
+	}
 
-	// for _, tt := range testCases {
-	// 	t.Run(tt.name, func(t *testing.T) {
-	// 		gen := Factory(logr.Discard(), nil)
-	// 		_, err := gen.Check(context.TODO(), &deployerv1.KustomizationGate{
-	// 			Name: "testing",
-	// 			Scheduled: &deployerv1.ScheduledCheck{
-	// 				Open:  tt.open,
-	// 				Close: tt.closed,
-	// 			},
-	// 		}, nil)
-
-	// 		test.AssertErrorMatch(t, tt.wantErr, err)
-	// 	})
-	// }
+	gen := New(logr.Discard(), nil)
+	if i := gen.Interval(gate); i != time.Minute*5 {
+		t.Fatalf("Interval() got %v, want %v", i, time.Minute*5)
+	}
 }

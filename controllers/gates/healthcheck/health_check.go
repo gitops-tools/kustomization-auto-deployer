@@ -19,6 +19,7 @@ package healthcheck
 import (
 	"context"
 	"net/http"
+	"time"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
@@ -72,4 +73,10 @@ func (g HealthCheckGate) Check(ctx context.Context, gate *deployerv1.Kustomizati
 	g.Logger.Info("healthcheck complete", "gate", gate.Name, "statusCode", resp.StatusCode)
 
 	return resp.StatusCode == http.StatusOK, nil
+}
+
+// Interval returns the time after which to requeue this check.
+func (g HealthCheckGate) Interval(gate *deployerv1.KustomizationGate) time.Duration {
+	return gate.HealthCheck.Interval.Duration
+
 }

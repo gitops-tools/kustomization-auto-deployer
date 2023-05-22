@@ -86,3 +86,8 @@ func parseAndMerge(now time.Time, name, phase, str string) (time.Time, error) {
 
 	return time.Date(now.Year(), now.Month(), now.Day(), parsed.Hour(), parsed.Minute(), 0, 0, now.Location()), nil
 }
+
+// Interval returns the time after which to requeue this check.
+func (g ScheduledGate) Interval(gate *deployerv1.KustomizationGate) time.Duration {
+	return time.Minute * 3
+}
