@@ -3,7 +3,7 @@ module github.com/gitops-tools/kustomization-auto-deployer
 go 1.19
 
 require (
-	github.com/fluxcd/kustomize-controller/api v1.0.0-rc.1
+	github.com/fluxcd/kustomize-controller/api v1.0.0-rc.3
 	github.com/fluxcd/pkg/apis/meta v1.0.0
 	github.com/fluxcd/pkg/runtime v0.35.0
 	github.com/fluxcd/source-controller/api v1.0.0-rc.1
@@ -11,6 +11,7 @@ require (
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/go-logr/logr v1.2.3
 	github.com/google/go-cmp v0.5.9
+	github.com/onsi/gomega v1.27.5
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
 	sigs.k8s.io/controller-runtime v0.14.6
@@ -51,7 +52,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/onsi/gomega v1.27.5 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
