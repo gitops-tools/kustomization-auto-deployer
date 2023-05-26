@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
@@ -215,15 +214,14 @@ func (r *KustomizationAutoDeployerReconciler) SetupWithManager(mgr ctrl.Manager)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&deployerv1.KustomizationAutoDeployer{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Watches(
-			&source.Kind{Type: &kustomizev1.Kustomization{}},
+			&kustomizev1.Kustomization{},
 			handler.EnqueueRequestsFromMapFunc(r.kustomizationToAutoDeployer),
 		).
 		Complete(r)
 }
 
 // TODO: Fold these two into a closure with the index key!
-func (r *KustomizationAutoDeployerReconciler) kustomizationToAutoDeployer(obj client.Object) []reconcile.Request {
-	ctx := context.Background()
+func (r *KustomizationAutoDeployerReconciler) kustomizationToAutoDeployer(ctx context.Context, obj client.Object) []reconcile.Request {
 	var list deployerv1.KustomizationAutoDeployerList
 
 	if err := r.List(ctx, &list, client.MatchingFields{
