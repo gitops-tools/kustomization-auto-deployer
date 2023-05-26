@@ -58,15 +58,9 @@ type ScheduledGate struct {
 
 // Check returns true if now is within the the Scheduled gate time duration.
 func (g ScheduledGate) Check(ctx context.Context, gate *deployerv1.KustomizationGate, _ *deployerv1.KustomizationAutoDeployer) (bool, error) {
-	now := g.Clock()
 	// TODO: Logging
-
-	open, err := parseAndMerge(now, gate.Name, "open", gate.Scheduled.Open)
-	if err != nil {
-		return false, err
-	}
-
-	closed, err := parseAndMerge(now, gate.Name, "close", gate.Scheduled.Close)
+	now := g.Clock()
+	open, closed, err := parseScheduledTimes(now, gate.Name, gate.Scheduled)
 	if err != nil {
 		return false, err
 	}
@@ -88,6 +82,34 @@ func parseAndMerge(now time.Time, name, phase, str string) (time.Time, error) {
 }
 
 // Interval returns the time after which to requeue this check.
-func (g ScheduledGate) Interval(gate *deployerv1.KustomizationGate) time.Duration {
-	return time.Minute * 3
+func (g ScheduledGate) Interval(gate *deployerv1.KustomizationGate) (time.Duration, error) {
+	now := g.Clock()
+	open, closed, err := parseScheduledTimes(now, gate.Name, gate.Scheduled)
+	if err != nil {
+		return 0, err
+	}
+
+	if now.Before(open) {
+		return open.Sub(now), nil
+	}
+
+	if now.Before(closed) {
+		return closed.Sub(now), nil
+	}
+
+	return open.Add(time.Hour * 24).Sub(now), nil
+}
+
+func parseScheduledTimes(now time.Time, name string, check *deployerv1.ScheduledCheck) (open time.Time, closed time.Time, err error) {
+	open, err = parseAndMerge(now, name, "open", check.Open)
+	if err != nil {
+		return
+	}
+
+	closed, err = parseAndMerge(now, name, "close", check.Close)
+	if err != nil {
+		return
+	}
+
+	return
 }

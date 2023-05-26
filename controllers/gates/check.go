@@ -26,13 +26,13 @@ import (
 
 // Check checks the gates defined in the KustomizationAutoDeployer and returns
 // true if all gates are open.
-func Check(ctx context.Context, r *deployerv1.KustomizationAutoDeployer, configuredGates map[string]Gate) (bool, map[string]map[string]bool, error) {
+func Check(ctx context.Context, r *deployerv1.KustomizationAutoDeployer, configuredGates map[string]Gate) (bool, deployerv1.GatesStatus, error) {
 	// Open if no Gates are defined.
 	if len(r.Spec.Gates) == 0 {
 		return true, nil, nil
 	}
 
-	result := map[string]map[string]bool{}
+	result := deployerv1.GatesStatus{}
 	for _, gate := range r.Spec.Gates {
 		checks, err := check(ctx, gate, r, configuredGates)
 		if err != nil {

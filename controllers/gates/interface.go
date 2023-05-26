@@ -40,7 +40,7 @@ type Gate interface {
 	//
 	// A Gate can return an empty time.Duration value if it should not be
 	// rechecked after a period.
-	Interval(*deployerv1.KustomizationGate) time.Duration
+	Interval(*deployerv1.KustomizationGate) (time.Duration, error)
 }
 
 // NoRequeueInterval is a simple default value that can be used to indicate that

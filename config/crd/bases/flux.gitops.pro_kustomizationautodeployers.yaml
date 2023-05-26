@@ -180,6 +180,13 @@ spec:
                   - type
                   type: object
                 type: array
+              gates:
+                additionalProperties:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+                description: Gates contains the state of the configured gates.
+                type: object
               latestCommit:
                 description: LatestCommit is the latest commit processed by the Kustomization.
                 type: string

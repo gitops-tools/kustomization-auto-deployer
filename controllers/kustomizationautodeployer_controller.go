@@ -81,7 +81,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	var kustomization kustomizev1.Kustomization
 	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: deployer.Spec.KustomizationRef.Name}, &kustomization); err != nil {
 		logger.Error(err, "loading Kustomization for KustomizationAutoDeployer")
-		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.FailedToLoadKustomizationReason, "referenced Kustomization could not be loaded")
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.FailedToLoadKustomizationReason, "referenced Kustomization could not be loaded", nil)
 		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 			logger.Error(err, "failed to update deployer status")
 		}
@@ -109,7 +109,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	// TODO: What if the Artifact is not available - this will panic!
 	if gitRepository.Status.Artifact == nil {
 		logger.Info("git repository status not yet populated")
-		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GitRepositoryNotPopulatedReason, fmt.Sprintf("GitRepository %s does not have an artifact", sourceRefObjectKey))
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GitRepositoryNotPopulatedReason, fmt.Sprintf("GitRepository %s does not have an artifact", sourceRefObjectKey), nil)
 		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 			logger.Error(err, "failed to update deployer status")
 		}
@@ -135,7 +135,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	revisions, err := r.RevisionLister(ctx, gitRepository.Spec.URL, git.ListOptions{MaxCommits: deployer.Spec.CommitLimit})
 	if err != nil {
 		logger.Error(err, "listing revisions", "url", gitRepository.Spec.URL)
-		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.RevisionsErrorReason, err.Error())
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.RevisionsErrorReason, err.Error(), nil)
 		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 			logger.Error(err, "failed to update deployer status")
 		}
@@ -192,16 +192,16 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 		instantiatedGates[k] = factory(logger, r.Client)
 	}
 
-	open, _, err := gates.Check(ctx, &deployer, instantiatedGates)
+	open, gatesStatus, err := gates.Check(ctx, &deployer, instantiatedGates)
 	if err != nil {
 		logger.Error(err, "error checking gates")
 		return ctrl.Result{}, err
 	}
 
 	if !open {
-		logger.Info("gates are not currently open")
+		logger.Info("gates are currently closed")
 		// TODO: identify the closed gates from the response.
-		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GatesClosedReason, "gates are currently closed")
+		setDeployerReadiness(&deployer, metav1.ConditionFalse, deployerv1.GatesClosedReason, "gates are currently closed", gatesStatus)
 		// TODO: Refactor this to avoid duplication!
 		if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 			logger.Error(err, "failed to reconcile")
@@ -212,7 +212,6 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	}
 
 	gitRepository.Spec.Reference.Commit = nextCommitToDeploy
-
 	if err := patchHelper.Patch(ctx, &gitRepository); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update GitRepository: %w", err)
 	}
@@ -221,6 +220,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 	// TODO: Refactor this to avoid duplication!
 	deployer.Status.LatestCommit = commitReference(repoBranch, nextCommitToDeploy)
 	deployer.Status.ObservedGeneration = deployer.Generation
+	deployer.Status.Gates = gatesStatus
 	if err := r.patchStatus(ctx, req, deployer.Status); err != nil {
 		logger.Error(err, "failed to reconcile")
 	}
@@ -313,13 +313,16 @@ func commitReference(branch, commitID string) string {
 	return branch + "@sha1:" + commitID
 }
 
-func setDeployerReadiness(deployer *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, reason, message string) {
+func setDeployerReadiness(deployer *deployerv1.KustomizationAutoDeployer, status metav1.ConditionStatus, reason, message string, gates deployerv1.GatesStatus) {
 	deployer.Status.ObservedGeneration = deployer.ObjectMeta.Generation
 	newCondition := metav1.Condition{
 		Type:    meta.ReadyCondition,
 		Status:  status,
 		Reason:  reason,
 		Message: message,
+	}
+	if gates != nil {
+		deployer.Status.Gates = gates
 	}
 	apimeta.SetStatusCondition(&deployer.Status.Conditions, newCondition)
 }

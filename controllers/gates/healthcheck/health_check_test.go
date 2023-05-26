@@ -91,7 +91,7 @@ func TestHealthCheckGate_Interval(t *testing.T) {
 	}
 
 	gen := New(logr.Discard(), nil)
-	if i := gen.Interval(gate); i != time.Minute*5 {
+	if i, _ := gen.Interval(gate); i != time.Minute*5 {
 		t.Fatalf("Interval() got %v, want %v", i, time.Minute*5)
 	}
 }

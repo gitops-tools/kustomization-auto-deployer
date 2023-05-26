@@ -76,7 +76,7 @@ func (g HealthCheckGate) Check(ctx context.Context, gate *deployerv1.Kustomizati
 }
 
 // Interval returns the time after which to requeue this check.
-func (g HealthCheckGate) Interval(gate *deployerv1.KustomizationGate) time.Duration {
-	return gate.HealthCheck.Interval.Duration
+func (g HealthCheckGate) Interval(gate *deployerv1.KustomizationGate) (time.Duration, error) {
+	return gate.HealthCheck.Interval.Duration, nil
 
 }

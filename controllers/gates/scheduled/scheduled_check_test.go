@@ -119,8 +119,26 @@ func TestScheduledGate_Check_errors(t *testing.T) {
 }
 
 func TestScheduledGate_Interval(t *testing.T) {
-	// 9am on the 14th May 2023
-	now := time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC)
+	intervalTests := []struct {
+		now  time.Time
+		want time.Duration
+	}{
+		{
+			// 09:00 on the 14th May 2023
+			now:  time.Date(2023, time.May, 14, 9, 0, 0, 0, time.UTC),
+			want: time.Hour * 8,
+		},
+		{
+			// 18:00 on the 14th May 2023
+			now:  time.Date(2023, time.May, 14, 18, 0, 0, 0, time.UTC),
+			want: time.Hour * 1,
+		},
+		{
+			// 20:00 on the 14th May 2023
+			now:  time.Date(2023, time.May, 14, 20, 0, 0, 0, time.UTC),
+			want: time.Hour * 21, // 20:00 -> 00:00 + 17:00 = 21h
+		},
+	}
 
 	gate := &deployerv1.KustomizationGate{
 		Name: "testing",
@@ -130,13 +148,22 @@ func TestScheduledGate_Interval(t *testing.T) {
 		},
 	}
 
-	gen := New(logr.Discard(), func(s *ScheduledGate) {
-		s.Clock = func() time.Time {
-			return now
-		}
-	})
+	for _, tt := range intervalTests {
+		t.Run(fmt.Sprintf("%v", tt.now), func(t *testing.T) {
+			gen := New(logr.Discard(), func(s *ScheduledGate) {
+				s.Clock = func() time.Time {
+					return tt.now
+				}
+			})
 
-	if i := gen.Interval(gate); i != time.Minute*5 {
-		t.Fatalf("Interval() got %v, want %v", i, time.Minute*5)
+			i, err := gen.Interval(gate)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if i != tt.want {
+				t.Fatalf("Interval() got %v, want %v", i, tt.want)
+			}
+		})
 	}
 }

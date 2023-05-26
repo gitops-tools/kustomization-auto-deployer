@@ -37,7 +37,7 @@ func TestCheck(t *testing.T) {
 		name     string
 		deployer *deployerv1.KustomizationAutoDeployer
 		open     bool
-		checks   map[string]map[string]bool
+		checks   deployerv1.GatesStatus
 	}{
 		{
 			name:     "no gates should fail open",
@@ -58,7 +58,7 @@ func TestCheck(t *testing.T) {
 				}
 			}),
 			open:   true,
-			checks: map[string]map[string]bool{"within scheduled hours": {"ScheduledGate": true}},
+			checks: deployerv1.GatesStatus{"within scheduled hours": {"ScheduledGate": true}},
 		},
 		{
 			name: "closed gate is closed",
@@ -74,7 +74,7 @@ func TestCheck(t *testing.T) {
 				}
 			}),
 			open:   false,
-			checks: map[string]map[string]bool{"outwith scheduled hours": {"ScheduledGate": false}},
+			checks: deployerv1.GatesStatus{"outwith scheduled hours": {"ScheduledGate": false}},
 		},
 	}
 

@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	// GatesClosedReason is set when further deployments can't continue because
+	// GatesClosedReason is set when no commits will be applied because
 	// the gates are currently closed.
 	GatesClosedReason string = "GatesClosed"
 
@@ -38,6 +38,10 @@ const (
 	// upstream repository.
 	RevisionsErrorReason string = "RevisionsError"
 )
+
+// GatesStatus contains a per-Gate, per check state of the configured gates in
+// the auto deployer.
+type GatesStatus map[string]map[string]bool
 
 // HealthCheck is a Gate that fetches a URL and is open if the requests are
 // successful.
@@ -126,6 +130,9 @@ type KustomizationAutoDeployerStatus struct {
 	// Conditions holds the conditions for the KustomizationAutoDeployer.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Gates contains the state of the configured gates.
+	Gates GatesStatus `json:"gates,omitempty"`
 }
 
 //+kubebuilder:object:root=true

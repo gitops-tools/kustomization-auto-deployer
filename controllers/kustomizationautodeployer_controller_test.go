@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
@@ -38,6 +41,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/healthcheck"
+	"github.com/gitops-tools/kustomization-auto-deployer/controllers/gates/scheduled"
 	"github.com/gitops-tools/kustomization-auto-deployer/pkg/git"
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 )
@@ -75,6 +81,10 @@ func TestReconciliation(t *testing.T) {
 		Client:         k8sClient,
 		Scheme:         scheme,
 		RevisionLister: testRevisionLister(test.CommitIDs),
+		GateFactories: map[string]gates.GateFactory{
+			"HealthCheck": healthcheck.Factory(http.DefaultClient),
+			"Scheduled":   scheduled.Factory,
+		},
 	}
 
 	test.AssertNoError(t, reconciler.SetupWithManager(mgr))
@@ -323,6 +333,65 @@ func TestReconciliation(t *testing.T) {
 		}
 	})
 
+	t.Run("reconciling with open gates", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, "Successful response")
+		}))
+		t.Cleanup(ts.Close)
+
+		ctx := log.IntoContext(context.TODO(), testr.New(t))
+		deployer := test.NewKustomizationAutoDeployer(func(kd *deployerv1.KustomizationAutoDeployer) {
+			kd.Spec.Gates = []deployerv1.KustomizationGate{
+				{
+					Name: "accessing a test server",
+					HealthCheck: &deployerv1.HealthCheck{
+						URL: ts.URL,
+					},
+				},
+			}
+		})
+
+		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
+		defer cleanupResource(t, k8sClient, deployer)
+
+		// both use the same commit IDs test.CommitIDs[4]
+		repo := test.NewGitRepository()
+		test.AssertNoError(t, k8sClient.Create(ctx, repo))
+		defer cleanupResource(t, k8sClient, repo)
+
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+			r.Status.Artifact = &sourcev1.Artifact{
+				Revision: "main@sha1:" + test.CommitIDs[4],
+			}
+		})
+
+		kustomization := test.NewKustomization(repo)
+		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
+		defer cleanupResource(t, k8sClient, kustomization)
+		kustomization.Status.LastAppliedRevision = "main@sha1:" + test.CommitIDs[4]
+		test.AssertNoError(t, k8sClient.Status().Update(ctx, kustomization))
+
+		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
+		test.AssertNoError(t, err)
+
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
+
+		// one closer to HEAD
+		want := "main@sha1:" + test.CommitIDs[3]
+		if deployer.Status.LatestCommit != want {
+			t.Errorf("failed to update with latest commit, got %q, want %q", deployer.Status.LatestCommit, want)
+		}
+
+		updatedRepo := &sourcev1.GitRepository{}
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), updatedRepo))
+		if updatedRepo.Spec.Reference.Commit != test.CommitIDs[3] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", updatedRepo.Spec.Reference.Commit, test.CommitIDs[3])
+		}
+
+		assertDeployerGatesEqual(t, deployer, map[string]map[string]bool{
+			"accessing a test server": {"HealthCheckGate": true},
+		})
+	})
 }
 
 func cleanupResource(t *testing.T, cl client.Client, obj client.Object) {
@@ -355,5 +424,11 @@ func assertDeployerCondition(t *testing.T, kd *deployerv1.KustomizationAutoDeplo
 
 	if cond.Message != msg {
 		t.Errorf("got Message %s, want %s", cond.Message, msg)
+	}
+}
+
+func assertDeployerGatesEqual(t *testing.T, deployer *deployerv1.KustomizationAutoDeployer, want deployerv1.GatesStatus) {
+	if diff := cmp.Diff(want, deployer.Status.Gates); diff != "" {
+		t.Fatalf("deployer gates do not match:\n%s", diff)
 	}
 }
