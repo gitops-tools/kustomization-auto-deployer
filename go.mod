@@ -3,7 +3,7 @@ module github.com/gitops-tools/kustomization-auto-deployer
 go 1.19
 
 require (
-	github.com/fluxcd/kustomize-controller/api v1.0.0-rc.3
+	github.com/fluxcd/kustomize-controller/api v1.0.0-rc.4
 	github.com/fluxcd/pkg/apis/meta v1.1.0
 	github.com/fluxcd/pkg/runtime v0.38.1
 	github.com/fluxcd/source-controller/api v1.0.0-rc.3
@@ -29,7 +29,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.0.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
