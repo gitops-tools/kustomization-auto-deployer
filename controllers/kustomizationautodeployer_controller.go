@@ -19,7 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/patch"
@@ -124,7 +126,7 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 		return ctrl.Result{}, nil
 	}
 
-	// IF the last applied version in the Kustomization == the current version
+	// If the last applied version in the Kustomization == the current version
 	// of the GitRepository, we can look for a new version.
 	// TODO: is this right?
 	if kustomizationCommitID != repoCommitID {
@@ -185,8 +187,6 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 		return ctrl.Result{}, fmt.Errorf("failed to create patch helper for GitRepository: %w", err)
 	}
 
-	logger.Info("identified next commit - patching GitRepository", "nextCommitID", nextCommitToDeploy, "repositoryName", gitRepository.GetName(), "repositoryNamespace", gitRepository.GetNamespace())
-
 	instantiatedGates := map[string]gates.Gate{}
 	for k, factory := range r.GateFactories {
 		instantiatedGates[k] = factory(logger, r.Client)
@@ -208,8 +208,15 @@ func (r *KustomizationAutoDeployerReconciler) Reconcile(ctx context.Context, req
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, nil
+		requeueAfter, err := calculateInterval(&deployer, instantiatedGates)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to calculate requeue interval: %w", err)
+		}
+
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
+
+	logger.Info("identified next commit - patching GitRepository", "nextCommitID", nextCommitToDeploy, "repositoryName", gitRepository.GetName(), "repositoryNamespace", gitRepository.GetNamespace())
 
 	gitRepository.Spec.Reference.Commit = nextCommitToDeploy
 	if err := patchHelper.Patch(ctx, &gitRepository); err != nil {
@@ -325,4 +332,34 @@ func setDeployerReadiness(deployer *deployerv1.KustomizationAutoDeployer, status
 		deployer.Status.Gates = gates
 	}
 	apimeta.SetStatusCondition(&deployer.Status.Conditions, newCondition)
+}
+
+func calculateInterval(gs *deployerv1.KustomizationAutoDeployer, g map[string]gates.Gate) (time.Duration, error) {
+	res := []time.Duration{}
+	for _, mg := range gs.Spec.Gates {
+		relevantGates, err := gates.FindRelevantGates(mg, g)
+		if err != nil {
+			return gates.NoRequeueInterval, err
+		}
+
+		for _, rg := range relevantGates {
+			d, err := rg.Interval(&mg)
+			if err != nil {
+				return gates.NoRequeueInterval, err
+			}
+
+			if d > gates.NoRequeueInterval {
+				res = append(res, d)
+			}
+		}
+	}
+
+	if len(res) == 0 {
+		return gates.NoRequeueInterval, nil
+	}
+
+	// Find the lowest requeue interval provided by a gate
+	sort.Slice(res, func(i, j int) bool { return res[i] < res[j] })
+
+	return res[0], nil
 }
