@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/fluxcd/kustomize-controller/api v1.0.1
 	github.com/fluxcd/pkg/apis/meta v1.1.2
-	github.com/fluxcd/pkg/runtime v0.40.0
+	github.com/fluxcd/pkg/runtime v0.42.0
 	github.com/fluxcd/source-controller/api v1.0.1
 	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.8.1
@@ -14,7 +14,7 @@ require (
 	github.com/onsi/gomega v1.27.10
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
-	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/controller-runtime v0.15.1
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -63,9 +63,8 @@ require (
 	github.com/skeema/knownhosts v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.25.0 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.13.0 // indirect
@@ -84,7 +83,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.28.1 // indirect
 	k8s.io/apiextensions-apiserver v0.27.3 // indirect
-	k8s.io/component-base v0.27.3 // indirect
+	k8s.io/component-base v0.27.4 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
