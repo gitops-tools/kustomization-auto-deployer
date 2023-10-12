@@ -24,7 +24,7 @@ import (
 )
 
 // GateNotEnabledError is returned when a gate is not enabled
-// in the controller but a gated deploy  tries to use it.
+// in the controller but a gated deploy tries to use it.
 // If you want to handle this error you can either use
 // errors.As(err, &GateNotEnabledError{}) to check for any gate, or use
 // errors.Is(err, GateNotEnabledError{Name: HealthCheckGate}) for a specific gate.

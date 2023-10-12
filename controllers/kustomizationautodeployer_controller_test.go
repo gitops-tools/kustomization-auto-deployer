@@ -330,6 +330,49 @@ func TestReconciliation(t *testing.T) {
 		}
 	})
 
+	t.Run("reconciling GitRepository when the Kustomization hasn't reconciled", func(t *testing.T) {
+		ctx := log.IntoContext(context.TODO(), testr.New(t))
+		deployer := test.NewKustomizationAutoDeployer()
+		test.AssertNoError(t, k8sClient.Create(ctx, deployer))
+		defer cleanupResource(t, k8sClient, deployer)
+
+		// GitRepository is pointing at HEAD-1
+		repo := test.NewGitRepository(func(gr *sourcev1.GitRepository) {
+			gr.Spec.Reference.Commit = test.CommitIDs[0]
+		})
+		test.AssertNoError(t, k8sClient.Create(ctx, repo))
+		defer cleanupResource(t, k8sClient, repo)
+
+		// And the Artifact is HEAD-1
+		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
+			r.Status.Artifact = &sourcev1.Artifact{
+				Revision: "main@sha1:" + test.CommitIDs[1],
+			}
+		})
+
+		kustomization := test.NewKustomization(repo)
+		test.AssertNoError(t, k8sClient.Create(ctx, kustomization))
+		defer cleanupResource(t, k8sClient, kustomization)
+		// but the kustomization.Status is not populated - it hasn't deployed
+
+		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(deployer)})
+		test.AssertNoError(t, err)
+
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(deployer), deployer))
+
+		// The deployer status should not contain a commit (because it's not deploying)
+		if deployer.Status.LatestCommit != "" {
+			t.Errorf("deployer LatestCommit = %q it should be empty", deployer.Status.LatestCommit)
+		}
+
+		// The GitRepository latest commit should still be HEAD-1
+		// reload the repo
+		test.AssertNoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(repo), repo))
+		if repo.Spec.Reference.Commit != test.CommitIDs[0] {
+			t.Errorf("failed to configure the GitRepository with the correct commit got %q, want %q", repo.Spec.Reference.Commit, test.CommitIDs[0])
+		}
+	})
+
 	t.Run("reconciling with open gates", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "Successful response")
