@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.42.0
 	github.com/fluxcd/source-controller/api v1.1.2
 	github.com/go-git/go-billy/v5 v5.5.0
-	github.com/go-git/go-git/v5 v5.9.0
+	github.com/go-git/go-git/v5 v5.10.0
 	github.com/go-logr/logr v1.2.4
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/gomega v1.29.0
