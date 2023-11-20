@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/fluxcd/kustomize-controller/api v1.1.1
-	github.com/fluxcd/pkg/apis/meta v1.1.2
+	github.com/fluxcd/pkg/apis/meta v1.2.0
 	github.com/fluxcd/pkg/runtime v0.42.0
 	github.com/fluxcd/source-controller/api v1.1.2
 	github.com/go-git/go-billy/v5 v5.5.0
@@ -12,7 +12,7 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/gomega v1.30.0
-	k8s.io/apimachinery v0.28.3
+	k8s.io/apimachinery v0.28.4
 	k8s.io/client-go v0.28.3
 	sigs.k8s.io/controller-runtime v0.15.1
 	sigs.k8s.io/yaml v1.4.0
@@ -77,7 +77,7 @@ require (
 	golang.org/x/tools v0.13.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
