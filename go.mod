@@ -15,7 +15,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/gomega v1.33.1
 	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.2
+	k8s.io/client-go v0.30.3
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -84,7 +84,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.30.2 // indirect
+	k8s.io/api v0.30.3 // indirect
 	k8s.io/apiextensions-apiserver v0.30.1 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240411171206-dc4e619f62f3 // indirect
