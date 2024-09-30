@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.4.0
 	github.com/fluxcd/pkg/apis/meta v1.6.1
 	github.com/fluxcd/pkg/runtime v0.49.1
-	github.com/fluxcd/source-controller/api v1.3.0
+	github.com/fluxcd/source-controller/api v1.4.1
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/go-logr/logr v1.4.2
