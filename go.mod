@@ -14,7 +14,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/gomega v1.36.0
-	k8s.io/apimachinery v0.31.2
+	k8s.io/apimachinery v0.31.3
 	k8s.io/client-go v0.31.2
 	sigs.k8s.io/controller-runtime v0.19.2
 	sigs.k8s.io/yaml v1.4.0
