@@ -13,7 +13,7 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
-	github.com/onsi/gomega v1.36.0
+	github.com/onsi/gomega v1.36.1
 	k8s.io/apimachinery v0.31.3
 	k8s.io/client-go v0.31.3
 	sigs.k8s.io/controller-runtime v0.19.3
