@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/fluxcd/kustomize-controller/api v1.4.0
-	github.com/fluxcd/pkg/apis/meta v1.9.0
+	github.com/fluxcd/pkg/apis/meta v1.10.0
 	github.com/fluxcd/pkg/runtime v0.52.0
 	github.com/fluxcd/source-controller/api v1.4.1
 	github.com/go-git/go-billy/v5 v5.6.2
