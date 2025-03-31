@@ -2,12 +2,12 @@ module github.com/gitops-tools/kustomization-auto-deployer
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.24.1
 
 require (
 	github.com/fluxcd/kustomize-controller/api v1.5.1
 	github.com/fluxcd/pkg/apis/meta v1.10.0
-	github.com/fluxcd/pkg/runtime v0.55.0
+	github.com/fluxcd/pkg/runtime v0.58.0
 	github.com/fluxcd/source-controller/api v1.5.0
 	github.com/go-git/go-billy/v5 v5.6.2
 	github.com/go-git/go-git/v5 v5.14.0
@@ -16,7 +16,7 @@ require (
 	github.com/onsi/gomega v1.36.2
 	k8s.io/apimachinery v0.32.3
 	k8s.io/client-go v0.32.3
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.4.0
 )
 
