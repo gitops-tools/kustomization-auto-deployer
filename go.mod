@@ -1,7 +1,8 @@
 module github.com/gitops-tools/kustomization-auto-deployer
 
-go 1.23.0
-toolchain go1.24.1
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/fluxcd/kustomize-controller/api v1.5.1
