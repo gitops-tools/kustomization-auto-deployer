@@ -11,7 +11,7 @@ require (
 	github.com/fluxcd/source-controller/api v1.5.0
 	github.com/go-git/go-billy/v5 v5.6.2
 	github.com/go-git/go-git/v5 v5.16.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/gomega v1.37.0
 	k8s.io/apimachinery v0.33.1
