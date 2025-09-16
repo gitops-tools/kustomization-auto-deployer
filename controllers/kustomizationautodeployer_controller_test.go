@@ -138,7 +138,7 @@ func TestReconciliation(t *testing.T) {
 		test.AssertNoError(t, k8sClient.Create(ctx, repo))
 		defer cleanupResource(t, k8sClient, repo)
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
@@ -168,7 +168,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, repo)
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
@@ -207,7 +207,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, repo)
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[0],
 			}
 		})
@@ -255,7 +255,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, repo)
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[0],
 			}
 		})
@@ -300,7 +300,7 @@ func TestReconciliation(t *testing.T) {
 		// But the GitRepository hasn't updated from test.CommitIDs[1]
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[1],
 			}
 		})
@@ -345,7 +345,7 @@ func TestReconciliation(t *testing.T) {
 
 		// And the Artifact is HEAD-1
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[1],
 			}
 		})
@@ -401,7 +401,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, repo)
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
@@ -461,7 +461,7 @@ func TestReconciliation(t *testing.T) {
 		defer cleanupResource(t, k8sClient, repo)
 
 		test.UpdateRepoStatus(t, k8sClient, repo, func(r *sourcev1.GitRepository) {
-			r.Status.Artifact = &sourcev1.Artifact{
+			r.Status.Artifact = &meta.Artifact{
 				Revision: "main@sha1:" + test.CommitIDs[4],
 			}
 		})
