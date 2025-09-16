@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/gitops-tools/kustomization-auto-deployer/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/onsi/gomega"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	deployerv1 "github.com/gitops-tools/kustomization-auto-deployer/api/v1alpha1"
 )
@@ -32,7 +32,7 @@ func TestReconciling(t *testing.T) {
 	defer cleanupResource(t, testEnv, repo)
 
 	test.UpdateRepoStatus(t, testEnv, repo, func(r *sourcev1.GitRepository) {
-		r.Status.Artifact = &sourcev1.Artifact{
+		r.Status.Artifact = &meta.Artifact{
 			Revision: "main@sha1:" + test.CommitIDs[2],
 		}
 	})
@@ -58,7 +58,7 @@ func TestReconciling(t *testing.T) {
 	})
 
 	test.UpdateRepoStatus(t, testEnv, repo, func(r *sourcev1.GitRepository) {
-		r.Status.Artifact = &sourcev1.Artifact{
+		r.Status.Artifact = &meta.Artifact{
 			Revision: "main@sha1:" + test.CommitIDs[1],
 		}
 	})
@@ -75,7 +75,7 @@ func TestReconciling(t *testing.T) {
 	})
 
 	test.UpdateRepoStatus(t, testEnv, repo, func(r *sourcev1.GitRepository) {
-		r.Status.Artifact = &sourcev1.Artifact{
+		r.Status.Artifact = &meta.Artifact{
 			Revision: "main@sha1:" + test.CommitIDs[0],
 		}
 	})
@@ -103,7 +103,7 @@ func TestReconciling_with_gates(t *testing.T) {
 	test.AssertNoError(t, testEnv.Status().Update(ctx, kustomization))
 
 	test.UpdateRepoStatus(t, testEnv, repo, func(r *sourcev1.GitRepository) {
-		r.Status.Artifact = &sourcev1.Artifact{
+		r.Status.Artifact = &meta.Artifact{
 			Revision: "main@sha1:" + test.CommitIDs[2],
 		}
 	})
