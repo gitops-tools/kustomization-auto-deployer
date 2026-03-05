@@ -7,7 +7,7 @@ require (
 	github.com/fluxcd/pkg/apis/meta v1.25.0
 	github.com/fluxcd/pkg/runtime v0.102.0
 	github.com/fluxcd/source-controller/api v1.8.0
-	github.com/go-git/go-billy/v5 v5.7.0
+	github.com/go-git/go-billy/v5 v5.8.0
 	github.com/go-git/go-git/v5 v5.16.5
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
