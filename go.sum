@@ -35,8 +35,8 @@ github.com/evanphx/json-patch v0.5.2 h1:xVCHIVMUu1wtM/VkR9jVZ45N3FhZfYMMYGorLCR8
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
 github.com/evanphx/json-patch/v5 v5.9.11 h1:/8HVnzMq13/3x9TPvjG08wUGqBTmZBsCWzjTM0wiaDU=
 github.com/evanphx/json-patch/v5 v5.9.11/go.mod h1:3j+LviiESTElxA4p3EMKAB9HXj3/XEtnUf6OZxqIQTM=
-github.com/fluxcd/kustomize-controller/api v1.8.5 h1:4fGPh6foGVKUUbt5OjVzbC5iTyX+Q+NS50atPboDC4w=
-github.com/fluxcd/kustomize-controller/api v1.8.5/go.mod h1:c/mUPIffDDLg1EicXCJtX4N/rc+z5Zh0e/CXjhd7Dyc=
+github.com/fluxcd/kustomize-controller/api v1.9.0 h1:thrGRwrUWpEcvVWJd6xxEcIpcOVvre1JCmMY+tl+MF8=
+github.com/fluxcd/kustomize-controller/api v1.9.0/go.mod h1:/tk2hHcPxglZX/C0zL1NAGN+X+sZTR+JXr5LpzNRSh8=
 github.com/fluxcd/pkg/apis/acl v0.10.0 h1:KPfAmELNvtvaz8wixnm/MYXqa+MJf7ntVVMUU93Aenk=
 github.com/fluxcd/pkg/apis/acl v0.10.0/go.mod h1:a87i2A7AlFO5N2J8CxtzaUCCDmuLLWOHwkKu3eJF5fY=
 github.com/fluxcd/pkg/apis/kustomize v1.19.0 h1:DKiRUwS/8HaePXUF+JUShbBe/HAClnJwm2tdiUnPMiY=
