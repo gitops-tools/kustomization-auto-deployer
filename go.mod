@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/fluxcd/kustomize-controller/api v1.9.6
-	github.com/fluxcd/pkg/apis/meta v1.36.0
+	github.com/fluxcd/pkg/apis/meta v1.38.0
 	github.com/fluxcd/pkg/runtime v0.119.0
 	github.com/fluxcd/source-controller/api v1.9.6
 	github.com/go-git/go-billy/v5 v5.9.2
