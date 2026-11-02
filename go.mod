@@ -3,7 +3,7 @@ module github.com/gitops-tools/kustomization-auto-deployer
 go 1.27.0
 
 require (
-	github.com/fluxcd/kustomize-controller/api v1.9.6
+	github.com/fluxcd/kustomize-controller/api v1.10.1
 	github.com/fluxcd/pkg/apis/meta v1.38.0
 	github.com/fluxcd/pkg/runtime v0.122.0
 	github.com/fluxcd/source-controller/api v1.9.6
